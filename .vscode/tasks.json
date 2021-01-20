@@ -6,25 +6,7 @@
         {
             "label": "Python: Setup virtual environment",
             "type": "shell",
-            "command": "python3 -m venv ${workspaceFolder}/venv && ${workspaceFolder}/venv/bin/python3 -m pip install setuptools wheel",
-            "problemMatcher": {
-                "owner": "python",
-                "fileLocation": "autoDetect",
-                "pattern": [
-                    {
-                        "regexp": "^.*File \\\"([^\\\"]|.*)\\\", line (\\d+).*",
-                        "file": 1,
-                        "line": 2
-                    },
-                    {
-                        "regexp": "^.*raise.*$"
-                    },
-                    {
-                        "regexp": "^\\s*(.*)\\s*$",
-                        "message": 1
-                    }
-                ]
-            }
+            "command": "python3 -m venv ${workspaceFolder}/venv && ${workspaceFolder}/venv/bin/python3 -m pip install setuptools wheel twine"
         },
         {
             "label": "Python: Package CsvPlotter",
@@ -57,25 +39,16 @@
             "command": "${workspaceFolder}/venv/bin/python3 -m pip install dist/*.tar.gz",
             "dependsOn": [
                 "Python: Package CsvPlotter"
-            ],
-            "problemMatcher": {
-                "owner": "python",
-                "fileLocation": "autoDetect",
-                "pattern": [
-                    {
-                        "regexp": "^.*File \\\"([^\\\"]|.*)\\\", line (\\d+).*",
-                        "file": 1,
-                        "line": 2
-                    },
-                    {
-                        "regexp": "^.*raise.*$"
-                    },
-                    {
-                        "regexp": "^\\s*(.*)\\s*$",
-                        "message": 1
-                    }
-                ]
-            }
+            ]
+        },
+        {
+            "label": "Python: Upload to TestPyPi",
+            "group": "build",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3 -m twine upload --repository testpypi dist/*",
+            "dependsOn": [
+                "Python: Package CsvPlotter"
+            ]
         }
     ]
 }
