@@ -1,0 +1,81 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Python: Setup virtual environment",
+            "type": "shell",
+            "command": "python3 -m venv ${workspaceFolder}/venv && ${workspaceFolder}/venv/bin/python3 -m pip install setuptools wheel",
+            "problemMatcher": {
+                "owner": "python",
+                "fileLocation": "autoDetect",
+                "pattern": [
+                    {
+                        "regexp": "^.*File \\\"([^\\\"]|.*)\\\", line (\\d+).*",
+                        "file": 1,
+                        "line": 2
+                    },
+                    {
+                        "regexp": "^.*raise.*$"
+                    },
+                    {
+                        "regexp": "^\\s*(.*)\\s*$",
+                        "message": 1
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Python: Package CsvPlotter",
+            "group": "build",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3 setup.py sdist bdist_wheel",
+            "problemMatcher": {
+                "owner": "python",
+                "fileLocation": "autoDetect",
+                "pattern": [
+                    {
+                        "regexp": "^.*File \\\"([^\\\"]|.*)\\\", line (\\d+).*",
+                        "file": 1,
+                        "line": 2
+                    },
+                    {
+                        "regexp": "^.*raise.*$"
+                    },
+                    {
+                        "regexp": "^\\s*(.*)\\s*$",
+                        "message": 1
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Python: Install CsvPlotter",
+            "group": "build",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3 -m pip install dist/*.tar.gz",
+            "dependsOn": [
+                "Python: Package CsvPlotter"
+            ],
+            "problemMatcher": {
+                "owner": "python",
+                "fileLocation": "autoDetect",
+                "pattern": [
+                    {
+                        "regexp": "^.*File \\\"([^\\\"]|.*)\\\", line (\\d+).*",
+                        "file": 1,
+                        "line": 2
+                    },
+                    {
+                        "regexp": "^.*raise.*$"
+                    },
+                    {
+                        "regexp": "^\\s*(.*)\\s*$",
+                        "message": 1
+                    }
+                ]
+            }
+        }
+    ]
+}
