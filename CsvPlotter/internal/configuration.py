@@ -2,8 +2,9 @@ from .util_classes import SampleRange
 
 
 class PlotConfig(object):
-    def __init__(self, filename, range_cfg=SampleRange()):
-        self.filename = filename
+    def __init__(self, input_filename, range_cfg=SampleRange(), output_filename=None):
+        self.input_filename = input_filename
+        self.output_filename = output_filename
         self.range = range_cfg
         self.subplots = [SubplotConfig()]
 
@@ -18,17 +19,16 @@ class PlotConfig(object):
         self.subplots[subplot_idx].add_column(column_cfg)
 
 
+class ColumnConfig(object):
+    def __init__(self, col_name=None, label=None, alt_y_axis=False):
+        self.column_name = col_name
+        self.alt_y_axis = alt_y_axis
+        self.label = label if label is not None else col_name
+
+
 class SubplotConfig(object):
     def __init__(self):
         self.columns = []
 
     def add_column(self, column_cfg):
         self.columns.append(column_cfg)
-
-
-class ColumnConfig(object):
-    def __init__(self, col_name=None, col_data=[], label=None, alt_y_axis=False):
-        self.column_name = col_name
-        self.column_data = col_data
-        self.alt_y_axis = alt_y_axis
-        self.label = label if label is not None else col_name

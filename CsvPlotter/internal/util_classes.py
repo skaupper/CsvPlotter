@@ -9,11 +9,11 @@ class SampleRange(object):
 
     def __assert_validity(self):
         if self.start < 0 or self.end < 0:
-            raise ValueError(f'The object does not represent a valid range '
-                             '({self.start}-{self.end})!')
+            raise ValueError('The object does not represent a valid range '
+                             f'({self.start}-{self.end})!')
         if self.divider <= 0:
-            raise ValueError(f'The divider value must be positive but it '
-                             'was {self.divider}!')
+            raise ValueError('The divider value must be positive but it '
+                             f'was {self.divider}!')
 
     def update_range(self, start=None, end=None):
         if start is not None:
@@ -36,7 +36,7 @@ class SampleRange(object):
 
     def get_range(self):
         self.__assert_validity()
-        return range(self.start, self.end, self.divider)
+        return range(self.start, self.end+self.divider, self.divider)
 
     def apply_to_data(self, data):
         if len(data) < (self.end-self.start)/self.divider:
@@ -47,7 +47,7 @@ class SampleRange(object):
         if num % self.divider != 0:
             return False
 
-        if num < self.start or (num > self.end and self.end != -1):
+        if num < self.start or (num >= self.end and self.end != -1):
             return False
 
         return True

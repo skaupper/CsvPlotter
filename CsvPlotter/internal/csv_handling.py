@@ -39,15 +39,15 @@ class CsvData(object):
 
     @classmethod
     def from_file(cls, config):
-        print(f'Extract data from file: {config.filename}')
+        print(f'Extract data from file: {config.input_filename}')
 
         PRINT_THRESHOLD = 1000000
 
         last_idx = -1
 
-        data_obj = cls(read_headers(config.filename))
+        data_obj = cls(read_headers(config.input_filename))
 
-        with open(config.filename, 'r') as f:
+        with open(config.input_filename, 'r') as f:
             plots = csv.reader(f, delimiter=',')
             for i, row in enumerate(plots):
                 if i == 0:

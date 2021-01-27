@@ -1,61 +1,29 @@
 import matplotlib.pyplot as plt
-from math import ceil, floor
 
 
 #
-# Private helper function for preprocessing and plotting data
+# Private helper functions
 #
 
-
-def __prepare_data_set(data_obj, col_id, range_cfg, label=None):
-    if label is None:
-        label = col_id
-
-    # col_idx = __resolve_column_index(data_obj, col_id)
-    # if col_idx is None:
-    #     raise KeyError(f'No column "{col_id}" exists!')
-
-    return {
-        'x': __generate_x_axis(range_cfg),
-        'y': __get_data_view(data_obj['data'][col_id], range_cfg),
-        'label': label
-    }
-
-
-def __generate_all_data_series(data_obj, config):
-    all_series = []
-    for h in headers:
-        try:
-            all_series.append(__prepare_data_set(data_obj, h, range_cfg))
-        except KeyError as e:
-            print(e)
-    return all_series
-
-
-def __plot_all_series(axis, all_series):
-    # Take a list of data points and add them to the given plot axis (resp. its twin axis).
+def __plot_subplot(data_obj, config, subplot, axis):
     LINE_STYLE = '.-'
 
     line_objects = []
     labels = []
 
-    for i, series in enumerate(all_series):
-        labels.append(series['label'])
-        line_objects.append(
-            axis.plot(series['x'], series['y'], 'C'+str(i)+LINE_STYLE)[0])
+    x = config.range.get_range()
+
+    for i, col in enumerate(subplot.columns):
+        y = config.range.apply_to_data(data_obj.data[col.column_name])
+
+        labels.append(col.label)
+        line_objects.append(axis.plot(
+            x, y, f'C{i}{LINE_STYLE}')[0]
+        )
 
     axis.legend(line_objects, labels, loc='upper left')
-
-
-def __plot(all_series):
-    _, axis = plt.subplots(1, sharex=True)
-
-    __plot_all_series(axis, all_series)
     axis.set(xlabel='Samples')
     axis.grid()
-
-    print('Plot data...')
-    plt.show()
 
 
 #
@@ -64,11 +32,17 @@ def __plot(all_series):
 
 def plot_csv_data(data_obj, config):
 
-    # TODO: implement plotting using the new object and config layouts
+    # Prepare subplots
+    _, axes = plt.subplots(len(config.subplots), sharex=True)
+    if type(axes) != type([]):
+        axes = [axes]
 
-    print('Subplot contents:')
-    for subplot in config.subplots:
-        print(f'{len(subplot.columns)}')
+    for i, subplot in enumerate(config.subplots):
+        __plot_subplot(data_obj, config, subplot, axes[i])
 
-    # all_series = __generate_all_data_series(data_obj, config)
-    # __plot(all_series)
+    if config.output_filename is None:
+        print('Plot data...')
+        plt.show()
+    else:
+        print(f'Plot data to output file {config.output_filename}...')
+        plt.savefig(config.output_filename)

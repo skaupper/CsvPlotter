@@ -66,6 +66,9 @@ def create_plot_parser(generate_help=True):
 
     parser.add_argument('columns', type=str, nargs='+',
                         help='A list of columns that should be plotted. Either the column name or index are valid.', default=[])
+    parser.add_argument('-o', '--output-file', type=str,
+                        help='If specified, stores the plot in a file and prevents opening a plot window.\nThe file '
+                             'format is determined using the default behaviour of matplotlib.pyplot.savefig!', default=None)
     parser.add_argument('-d', '--divider',      type=__divide_check,
                         help='Divides the input data to only take each nth packet', default=1)
     parser.add_argument('-r', '--region',       type=__region_check,     help='Specifies the desired data range in format \'START:END\' (both inclusive). '

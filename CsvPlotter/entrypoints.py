@@ -37,7 +37,7 @@ def __handle_plot_args(args):
 
     sample_range = SampleRange(args.region[0], args.region[1],
                                args.divider)
-    config = cfg.PlotConfig(args.filename, sample_range)
+    config = cfg.PlotConfig(args.filename, sample_range, args.output_file)
 
     data_obj = csv_handling.CsvData.from_file(config)
     if data_obj.size == 0:
@@ -50,10 +50,7 @@ def __handle_plot_args(args):
                   'Make sure you either pass a column name or an index!')
             continue
 
-        config.add_column_to_subplot(cfg.ColumnConfig(
-            col_name,
-            data_obj.data[col_name]
-        ))
+        config.add_column_to_subplot(cfg.ColumnConfig(col_name))
 
     plotting.plot_csv_data(data_obj, config)
 
