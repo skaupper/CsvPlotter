@@ -42,6 +42,15 @@
             ]
         },
         {
+            "label": "Python: Install editable CsvPlotter",
+            "group": "build",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3 -m pip install -e .",
+            "dependsOn": [
+                "Python: Package CsvPlotter"
+            ]
+        },
+        {
             "label": "Python: Upload to TestPyPi",
             "group": "build",
             "type": "shell",
