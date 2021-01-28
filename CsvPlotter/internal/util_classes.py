@@ -1,4 +1,4 @@
-from math import ceil, floor
+from math import ceil
 
 
 class SampleRange(object):
@@ -23,8 +23,9 @@ class SampleRange(object):
     def __contains__(self, num):
         if num % self.divider != 0:
             return False
-
         if num < self.start or (num >= self.end and self.end != -1):
             return False
-
         return True
+
+    def __repr__(self):
+        return f'SampleRange{{start={self.start!r}, end={self.end!r}, divider={self.divider!r}}}'

@@ -37,6 +37,9 @@ class CsvData(object):
 
         self.size += 1
 
+    def __repr__(self):
+        return f'CsvData{{size={self.size!r}, capacity={self.capacity!r}, headers={self.headers!r}, data={self.data!r}}}'
+
     @classmethod
     def from_file(cls, config):
         print(f'Extract data from file: {config.input_filename}')
