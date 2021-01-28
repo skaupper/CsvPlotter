@@ -7,41 +7,18 @@ class SampleRange(object):
         self.end = end
         self.divider = divider
 
-    def __assert_validity(self):
-        if self.start < 0 or self.end < 0:
-            raise ValueError('The object does not represent a valid range '
-                             f'({self.start}-{self.end})!')
-        if self.divider <= 0:
-            raise ValueError('The divider value must be positive but it '
-                             f'was {self.divider}!')
-
-    def update_range(self, start=None, end=None):
-        if start is not None:
-            self.start = start
-        if end is not None:
-            self.end = end
-
-    def correct_values(self):
-        self.__assert_validity()
-
-        # Round start up to the next integer multiple of divider, if necessary
-        if self.start % self.divider != 0:
-            self.start = int(ceil(float(self.start) / self.divider)
+    def get_index_list(self, nr_of_indices=None):
+        corr_start_idx = int(ceil(float(self.start) / self.divider)
                              * self.divider)
-
-        # Round end down to the latest integer multiple of divider, if necessary
-        if self.end % self.divider != 0:
-            self.end = int(floor(float(self.end) / self.divider)
-                           * self.divider)
-
-    def get_range(self):
-        self.__assert_validity()
-        return range(self.start, self.end+self.divider, self.divider)
-
-    def apply_to_data(self, data):
-        if len(data) < (self.end-self.start)/self.divider:
-            return None
-        return data[:int((self.end-self.start)/self.divider+1)]
+        if self.end != -1:
+            corr_end_idx = int(ceil(float(self.end) / self.divider)
+                               * self.divider)
+        elif nr_of_indices is not None:
+            corr_end_idx = corr_start_idx+self.divider*nr_of_indices
+        else:
+            raise ValueError(f'Could not determine the end of the range "{self.start}:{self.end}", '
+                             'since "nr_of_indices" is not given either.')
+        return range(corr_start_idx, corr_end_idx, self.divider)
 
     def __contains__(self, num):
         if num % self.divider != 0:

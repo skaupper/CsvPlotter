@@ -11,10 +11,10 @@ def __plot_subplot(data_obj, config, subplot, axis):
     line_objects = []
     labels = []
 
-    x = config.range.get_range()
+    x = config.range.get_index_list(data_obj.size)
 
     for i, col in enumerate(subplot.columns):
-        y = config.range.apply_to_data(data_obj.data[col.column_name])
+        y = data_obj.data[col.column_name][:data_obj.size]
 
         labels.append(col.label)
         line_objects.append(axis.plot(

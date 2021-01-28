@@ -43,8 +43,6 @@ class CsvData(object):
 
         PRINT_THRESHOLD = 1000000
 
-        last_idx = -1
-
         data_obj = cls(read_headers(config.input_filename))
 
         with open(config.input_filename, 'r') as f:
@@ -66,12 +64,9 @@ class CsvData(object):
                         continue
 
                 data_obj.add_row(row)
-                last_idx = data_index
 
         if data_obj.size == 0:
             print('No relevant samples stored!')
         else:
             print(f'Finished: {data_obj.size} samples read')
-            config.range.update_range(end=last_idx)
-            config.range.correct_values()
         return data_obj
