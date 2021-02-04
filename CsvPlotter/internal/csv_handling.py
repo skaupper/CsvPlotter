@@ -2,96 +2,74 @@ import numpy as np
 import csv
 
 
-
-def __init_data_object(headers):
-    csv_data = {}
-
-    for h in headers:
-        csv_data[h] = np.array([], dtype=np.int32)
-
-    return {
-        'capacity': 0,
-        'size': 0,
-        'header': headers,
-        'data': csv_data
-    }
-
-def __process_row(data_obj, csv_row):
-
-    # If the next row would overflow the internal buffer, double its capacity before inserting the data
-    increase_by = None
-    if data_obj['size'] >= data_obj['capacity']:
-        increase_by = data_obj['size']
-        if increase_by == 0:
-            increase_by = 10000
-        data_obj['capacity'] += increase_by
-        resize = True
-    else:
-        resize = False
-
-    # Resize data arrays if needed and insert row data
-    for col_idx, col in enumerate(csv_row):
-        col_header = data_obj['header'][col_idx]
-
-        if resize:
-            data_obj['data'][col_header] = np.concatenate((data_obj['data'][col_header], np.full(increase_by, None)))
-
-        col_data = data_obj['data'][col_header]
-        col_data[data_obj['size']] = int(col.strip())
-
-    # One entry has been added to each column
-    data_obj['size'] += 1
-
-
-
 def read_headers(filename):
     with open(filename, 'r') as f:
         plots = csv.reader(f, delimiter=',')
         return [str(head).strip() for head in next(plots)]
 
 
-def read_data(filename, divider=1, start=0, end=-1):
-    print(f'Extract data from file: {filename}')
+class CsvData(object):
+    INITIAL_CAPACITY = 10000
 
-    PRINT_THRESHOLD = 1000000
+    def __init__(self, headers):
+        self.capacity = 0
+        self.size = 0
+        self.headers = headers
 
-    headers = read_headers(filename)
-    data_obj = __init_data_object(headers)
-    last_data_index = -1
+        csv_data = {}
+        for h in headers:
+            csv_data[h] = np.array([], dtype=np.int32)
+        self.data = csv_data
 
+    def __increase_capacity(self, incr):
+        self.capacity += incr
+        for h in self.headers:
+            self.data[h] = np.concatenate((self.data[h], np.full(incr, None)))
 
-    with open(filename, 'r') as f:
-        plots = csv.reader(f, delimiter=',')
-        for i, row in enumerate(plots):
-            if i == 0:
-                # The header is already read.
-                continue
+    def add_row(self, row):
+        if self.size >= self.capacity:
+            incr = self.capacity if self.capacity != 0 else self.INITIAL_CAPACITY
+            self.__increase_capacity(incr)
 
-            data_index = i-1
+        for idx, col in enumerate(row):
+            h = self.headers[idx]
+            self.data[h][self.size] = int(col.strip())
 
-            if data_index % PRINT_THRESHOLD == 0 and data_index != 0:
-                print(f'{data_index} samples read')
+        self.size += 1
 
+    def __repr__(self):
+        return f'CsvData{{size={self.size!r}, capacity={self.capacity!r}, headers={self.headers!r}, data={self.data!r}}}'
 
-            # If the end of the region has reached, exit the loop
-            if data_index >= end and end != -1:
-                break
+    @classmethod
+    def from_file(cls, config):
+        print(f'Extract data from file: {config.input_filename}')
 
-            # Skip rows until the desired region starts
-            if data_index < start:
-                continue
+        PRINT_THRESHOLD = 1000000
 
-            # Skip all rows whose indices are not a multiple of the divider
-            if data_index % divider != 0:
-                continue
+        data_obj = cls(read_headers(config.input_filename))
 
-            __process_row(data_obj, row)
-            last_data_index = data_index
+        with open(config.input_filename, 'r') as f:
+            plots = csv.reader(f, delimiter=',')
+            for i, row in enumerate(plots):
+                if i == 0:
+                    # The header is already read.
+                    continue
 
+                data_index = i-1
+                if data_index % PRINT_THRESHOLD == 0 and data_index != 0:
+                    print(f'{data_index} samples read')
 
-    if data_obj['size'] == 0:
-        print('No relevant samples stored!')
-        return (data_obj, -1, -1)
+                # If the end of the region has reached, exit the loop
+                if data_index not in config.range:
+                    if data_index >= config.range.end and config.range.end != -1:
+                        break
+                    else:
+                        continue
 
-    print(f'Finished: {data_obj["size"]} samples read')
-    return (data_obj, start, last_data_index)
+                data_obj.add_row(row)
+
+        if data_obj.size == 0:
+            print('No relevant samples stored!')
+        else:
+            print(f'Finished: {data_obj.size} samples read')
+        return data_obj

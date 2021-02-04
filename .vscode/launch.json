@@ -10,7 +10,11 @@
             "request": "launch",
             "module": "CsvPlotter.launcher",
             "console": "integratedTerminal",
-            "args": []
+            "args": [
+                "plot",
+                "~/dumps/0409-4-enc0.csv",
+                "master_angle"
+            ]
         }
     ]
 }
