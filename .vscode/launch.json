@@ -12,9 +12,10 @@
             "console": "integratedTerminal",
             "args": [
                 "plot",
-                "~/dumps/0409-4-enc0.csv",
-                "master_angle"
-            ]
+                "-c",
+                "angle_data_cfg.yml"
+            ],
+            "cwd": "${workspaceFolder}/doc"
         }
     ]
 }

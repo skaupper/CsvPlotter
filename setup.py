@@ -29,6 +29,7 @@ setuptools.setup(
     },
     install_requires=[
         'numpy>=1.15.0',
-        'matplotlib>=3.0.0'
+        'matplotlib>=3.0.0',
+        'pyyaml>=5.4'
     ]
 )

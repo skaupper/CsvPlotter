@@ -1,9 +1,9 @@
-import signal
+import yaml
 from math import log10, ceil
 
 from .internal import argument_parser, csv_handling, plotting
 from .internal import configuration as cfg
-from .internal.util_classes import SampleRange
+from .internal.samplerange import SampleRange
 
 
 #
@@ -32,32 +32,62 @@ def __resolve_column_id(data_obj, col_id):
 
 
 def __handle_plot_args(args):
-    # Make sure Ctrl+C in the terminal closes the plot
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    if 'yaml_config' in args and args.yaml_config is not None:
+        # Construct config from YAML file and update values with command line arguments
+        try:
+            with open(args.yaml_config, 'r') as f:
+                yaml_config = yaml.safe_load(f)
+        except yaml.YAMLError as ex:
+            print(f'Failed to load config file "{args.yaml_config}": {ex}')
+            return
 
-    sample_range = SampleRange(args.region[0], args.region[1],
-                               args.divider)
-    config = cfg.PlotConfig(args.filename, sample_range, args.output_file)
+        plot_cfg = cfg.PlotConfig.from_obj(yaml_config)
 
-    data_obj = csv_handling.CsvData.from_file(config)
+        if 'input_file' in args and args.input_file is not None:
+            plot_cfg.input_file = args.input_file
+        if 'output_file' in args and args.output_file is not None:
+            plot_cfg.output_file = args.output_file
+        if 'range' in args and args.range is not None:
+            plot_cfg.range.start = args.range[0]
+            plot_cfg.range.end = args.range[1]
+        if 'divider' in args and args.divider is not None:
+            plot_cfg.range.divider = args.divider
+
+    else:
+        # Construct config from command line arguments
+        plot_cfg = cfg.PlotConfig.from_obj({
+            'input_file': args.input_file,
+            'output_file': args.output_file,
+            'range_start': args.range[0],
+            'range_end': args.range[1],
+            'divider': args.divider,
+        })
+
+    # Load data into RAM
+    data_obj = csv_handling.CsvData.from_file(plot_cfg)
     if data_obj.size == 0:
         return
 
-    for col_id in args.columns:
-        col_name = __resolve_column_id(data_obj, col_id)
-        if col_name is None:
-            print(f'Unable to resolve column "{col_id}"! '
-                  'Make sure you either pass a column name or an index!')
-            continue
+    # Resolve column identifiers given as command line arguments and add the constructed subplot
+    if len(args.columns) > 0:
+        subplot_cfg = cfg.SubplotConfig()
+        for col_id in args.columns:
+            col_name = __resolve_column_id(data_obj, col_id)
+            if col_name is None:
+                print(f'Unable to resolve column "{col_id}"! '
+                      'Make sure you either pass a column name or an index!')
+                continue
 
-        config.add_column_to_subplot(cfg.ColumnConfig(col_name))
+            subplot_cfg.add_column(cfg.ColumnConfig(col_name))
+        plot_cfg.add_subplot(subplot_cfg)
 
-    plotting.plot_csv_data(data_obj, config)
+    # Plot data
+    plotting.plot_csv_data(data_obj, plot_cfg)
 
 
 def __handle_util_args(args):
     if args.list_headers:
-        headers = csv_handling.read_headers(args.filename)
+        headers = csv_handling.read_headers(args.input_file)
         print(f'Column headers found: {len(headers)}')
         idx_width = ceil(log10(len(headers)))
         for i, header in enumerate(headers):
