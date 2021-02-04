@@ -48,13 +48,15 @@ def __plot_subplot(data_obj, config, subplot, axis):
         )
 
     # Do general axes configuration like legends, labels,
-    axis.legend(line_objects, labels, loc='upper left')
     axis.set_xlabel(subplot.xlabel)
     axis.set_ylabel(subplot.ylabel)
     axis.set_ylim(subplot.ylim.start, subplot.ylim.end)
     axis.set_title(subplot.title)
 
+    legend = axis.legend(line_objects, labels, loc='upper left')
     if alt_axis is not None:
+        legend.remove()
+        alt_axis.add_artist(legend)
         alt_axis.set_ylabel(subplot.alt_ylabel)
         alt_axis.set_ylim(subplot.alt_ylim.start, subplot.alt_ylim.end)
     axis.grid()

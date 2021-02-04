@@ -65,10 +65,14 @@ def __handle_plot_args(args):
         plot_cfg = cfg.PlotConfig.from_obj({
             'input_file': args.input_file,
             'output_file': args.output_file,
-            'range_start': args.range[0],
-            'range_end': args.range[1],
+            'range_start': args.region[0] if args.region is not None else None,
+            'range_end': args.region[1] if args.region is not None else None,
             'divider': args.divider,
         })
+
+    # Validity checks
+    if plot_cfg.input_file is None or len(plot_cfg.input_file) == 0:
+        raise ValueError(f'No input file is specified!')
 
     # Load data into RAM
     data_obj = csv_handling.CsvData.from_file(plot_cfg)
