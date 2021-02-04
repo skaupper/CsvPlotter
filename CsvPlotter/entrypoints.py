@@ -3,7 +3,7 @@ from math import log10, ceil
 
 from .internal import argument_parser, csv_handling, plotting
 from .internal import configuration as cfg
-from .internal.samplerange import SampleRange
+from .internal.utils import Range
 
 
 #
@@ -44,12 +44,19 @@ def __handle_plot_args(args):
         plot_cfg = cfg.PlotConfig.from_obj(yaml_config)
 
         if 'input_file' in args and args.input_file is not None:
-            plot_cfg.input_file = args.input_file
+            if len(args.input_file) == 0:
+                plot_cfg.input_file = None
+            else:
+                plot_cfg.input_file = args.input_file
         if 'output_file' in args and args.output_file is not None:
-            plot_cfg.output_file = args.output_file
-        if 'range' in args and args.range is not None:
-            plot_cfg.range.start = args.range[0]
-            plot_cfg.range.end = args.range[1]
+            if len(args.output_file) == 0:
+                plot_cfg.output_file = None
+            else:
+                plot_cfg.output_file = args.output_file
+        if 'region' in args and args.region is not None:
+            plot_cfg.range.start = args.region[0]
+            plot_cfg.range.end = args.region[1] + \
+                1 if args.region[1] is not None else None
         if 'divider' in args and args.divider is not None:
             plot_cfg.range.divider = args.divider
 

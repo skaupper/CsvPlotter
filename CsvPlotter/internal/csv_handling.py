@@ -82,7 +82,7 @@ class CsvData(object):
 
                 # If the end of the region has reached, exit the loop
                 if data_index not in config.range:
-                    if data_index >= config.range.end and config.range.end != -1:
+                    if config.range.end is not None and data_index >= config.range.end:
                         break
                     else:
                         continue

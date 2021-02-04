@@ -1,10 +1,9 @@
 ---
 input_file: angle_data.csv
-# output_file: angle_data.svg
-range_start: 0
-range_end: 100
+output_file: angle_data.svg
+xlim: [~]
 divider: 1
-# share_x_axis: true
+share_x_axis: false
 
 plots:
   - title: Original angle
@@ -14,15 +13,16 @@ plots:
       - name: angle
         label: Angle [rad]
   - title: Trigonometric functions
+    xlabel: Sample
     ylabel: Amplitude
     alt_ylabel: Amplitude
-    xlabel: Sample
+    ylim: [-1.5, 1.5]
+    alt_ylim: [-20, 20]
     columns:
       - name: sin
-        lable: Sinus [1]
+        label: Sinus [1]
       - name: cos
-        lable: Cosinug [1]
-  - columns:
+        label: Cosinus [1]
       - name: tan
-        lable: Tangens [1]
-        # alt_y_axis: true
+        label: Tangens [1]
+        alt_y_axis: true

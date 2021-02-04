@@ -20,9 +20,9 @@ def __divide_check(v):
 
 def __region_check(v):
     # The region of samples to be plotted should be given in the form START:END.
-    # Negative values for either of START or END represent the first resp. the last sample (i.e. a value of -1 for END
+    # Negative values for either of START or END represent the first resp. the last sample (i.e. a value of None for END
     # sets END to the index of the last sample).
-    # Omitting either of the values will set its value to default (0 for START and -1 for END).
+    # Omitting either of the values will set its value to default (0 for START and None for END).
 
     if v is None:
         return None
@@ -34,12 +34,12 @@ def __region_check(v):
         if len(region) != 2:
             raise argparse.ArgumentError()
         start = int(region[0]) if len(region[0]) > 0 else 0
-        end = int(region[1]) if len(region[1]) > 0 else -1
+        end = int(region[1]) if len(region[1]) > 0 else None
 
         if start < 0:
             start = 0
         if end < 0:
-            end = -1
+            end = None
 
         error = False
     finally:
@@ -55,8 +55,6 @@ def __region_check(v):
 
 def __create_common_parser():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('-i', '--input-file',
-                        help='CSV debug data', required=False)
     return parser
 
 
@@ -65,9 +63,11 @@ def __create_common_parser():
 #
 
 def create_plot_parser(generate_help=True):
-    parser = argparse.ArgumentParser(description='Analyse the given CSV file.', parents=[
-                                     __create_common_parser()], add_help=generate_help)
+    parser = argparse.ArgumentParser(description='Plot the given CSV file.',
+                                     parents=[__create_common_parser()], add_help=generate_help)
 
+    parser.add_argument('-i', '--input-file',
+                        help='CSV data file', required=False)
     parser.add_argument('columns', type=str, nargs='*',
                         help='A list of columns that should be plotted. Both the column name and index are valid.', default=[])
     parser.add_argument('-o', '--output-file', type=str,
@@ -75,7 +75,7 @@ def create_plot_parser(generate_help=True):
                              'format is determined using the default behaviour of matplotlib.pyplot.savefig!', required=False)
     parser.add_argument('-d', '--divider',      type=__divide_check,
                         help='Divides the input data to only take each nth packet', required=False)
-    parser.add_argument('-r', '--region',       type=__region_check,     help='Specifies the desired data range in format \'START:END\' (both inclusive). '
+    parser.add_argument('-r', '--region',       type=__region_check,     help='Specifies the desired data range in format \'START:END\' (inclusive START but exclusive END). '
                                                                               'START and END (or both) my be omitted to specify an open range '
                                                                               'e.g. use \'100:\' to plot all data from the 100th sample until the last one.', required=False)
     parser.add_argument('-c', '--config', dest='yaml_config',  type=str,
@@ -87,9 +87,10 @@ def create_plot_parser(generate_help=True):
 
 
 def create_utility_parser(generate_help=True):
-    parser = argparse.ArgumentParser(description='Provide utilities to process a CSV file in different ways.', parents=[
-                                     __create_common_parser()], add_help=generate_help)
+    parser = argparse.ArgumentParser(description='Provide utilities to process a CSV file in different ways.',
+                                     parents=[__create_common_parser()], add_help=generate_help)
 
+    parser.add_argument('input-file', help='CSV data file')
     parser.add_argument('-l', '--list-headers', action='store_true',
                         help='List all column headers found (all entries of the first row).', default=False)
     return parser
