@@ -69,7 +69,7 @@ Only very basic features are available via command line arguments.
     csv_plot -i angle_data.csv -o angle_data.svg -d 3 -r 10:100 sin cos
 ```
 
-Above command takes the file `angle_data.csv` as input and exports the resulting plot as `angle_data.svg`. The actual output format is determined automatically and follows the rules of [`matplotlib.pyplot.savefig`](https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.savefig.html). If the output file is omitted an interactive plot is opened using [`matplotlib`](https://matplotlib.org/).
+The command above takes the file `angle_data.csv` as input and exports the resulting plot as `angle_data.svg`. The actual output format is determined automatically and follows the rules of [`matplotlib.pyplot.savefig`](https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.savefig.html). If the output file is omitted an interactive plot is opened using [`matplotlib`](https://matplotlib.org/).
 
 The parameters `-r` and `-d`  are used to reduce the amount of data points to plot:
 
@@ -82,11 +82,12 @@ All positional arguments passed to the `csv_plot` commands are considered column
 
 By passing the flag `-c` with the path to a configuration file the script parses the file and tries to configure the plotting according to the settings specified.
 
-**TODO**
+This configuration file is generally separated into a general plot config, at least one subplot config and at least one column config for each of the specified subplots. In the YAML file this hierarchy is represented as nested lists.
 
-Example YAML configuration:
+An example configuration as well as short descriptions for all used fields are given below:
 
 ```yaml
+# A value of ~ is considered a null value in YAML!
 ---
 input_file: angle_data.csv      # Path to data file.    Required
 output_file: angle_data.svg     # Image export path.    Optional (Default: ~)
@@ -117,8 +118,6 @@ plots:
                                 # the 2nd Y axis.       Optional (Default: false)
 ```
 
-```bash
-    csv_plot -c angle_data_cfg.yml
-```
+Executing the command `csv_plot -c angle_data_cfg.yml` in the `doc/` directory will result in the following plot:
 
 ![Example Image](./doc/angle_data.svg)
