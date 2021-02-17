@@ -4,7 +4,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='CsvPlotter-skaupper',
+    name='csv-plotter-skaupper',
     version='0.0.1',
     author='Sebastian Kaupper',
     author_email='kauppersebastian@gmail.com',
@@ -22,13 +22,13 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'CsvPlotter=CsvPlotter.entrypoints:combined',
             'csv_plot=CsvPlotter.entrypoints:plot',
             'csv_util=CsvPlotter.entrypoints:util'
         ]
     },
     install_requires=[
         'numpy>=1.15.0',
-        'matplotlib>=3.0.0'
+        'matplotlib>=3.0.0',
+        'pyyaml>=5.4'
     ]
 )

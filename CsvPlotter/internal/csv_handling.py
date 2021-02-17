@@ -1,6 +1,8 @@
 import numpy as np
 import csv
 
+from .utils import str2bool
+
 
 def read_headers(filename):
     with open(filename, 'r') as f:
@@ -18,13 +20,14 @@ class CsvData(object):
 
         csv_data = {}
         for h in headers:
-            csv_data[h] = np.array([], dtype=np.int32)
+            csv_data[h] = np.array([], dtype=np.float32)
         self.data = csv_data
 
     def __increase_capacity(self, incr):
         self.capacity += incr
         for h in self.headers:
-            self.data[h] = np.concatenate((self.data[h], np.full(incr, None)))
+            self.data[h] = np.concatenate(
+                (self.data[h], np.full(incr, None, dtype=np.float32)))
 
     def add_row(self, row):
         if self.size >= self.capacity:
@@ -33,7 +36,25 @@ class CsvData(object):
 
         for idx, col in enumerate(row):
             h = self.headers[idx]
-            self.data[h][self.size] = int(col.strip())
+            val_str = col.strip()
+            val = None
+
+            # Try parsing the given entry
+            try:
+                val = 1 if str2bool(val_str) else 0
+            except ValueError:
+                pass
+            try:
+                val = float(val_str)
+                val = int(val_str)
+            except ValueError:
+                pass
+
+            if val is None:
+                print(f'Unsupported value type of "{val_str}"!')
+                return
+
+            self.data[h][self.size] = val
 
         self.size += 1
 
@@ -42,13 +63,13 @@ class CsvData(object):
 
     @classmethod
     def from_file(cls, config):
-        print(f'Extract data from file: {config.input_filename}')
+        print(f'Extract data from file: {config.input_file}')
 
         PRINT_THRESHOLD = 1000000
 
-        data_obj = cls(read_headers(config.input_filename))
+        data_obj = cls(read_headers(config.input_file))
 
-        with open(config.input_filename, 'r') as f:
+        with open(config.input_file, 'r') as f:
             plots = csv.reader(f, delimiter=',')
             for i, row in enumerate(plots):
                 if i == 0:
@@ -61,7 +82,7 @@ class CsvData(object):
 
                 # If the end of the region has reached, exit the loop
                 if data_index not in config.range:
-                    if data_index >= config.range.end and config.range.end != -1:
+                    if config.range.end is not None and data_index >= config.range.end:
                         break
                     else:
                         continue

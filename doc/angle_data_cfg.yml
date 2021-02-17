@@ -1,0 +1,28 @@
+---
+input_file: angle_data.csv
+output_file: angle_data.svg
+xlim: [~]
+divider: 1
+share_x_axis: false
+
+plots:
+  - title: Original angle
+    ylabel: Amplitude
+    xlabel: Sample
+    columns:
+      - name: angle
+        label: Angle [rad]
+  - title: Trigonometric functions
+    xlabel: Sample
+    ylabel: Amplitude
+    alt_ylabel: Amplitude
+    ylim: [-1.5, 1.5]
+    alt_ylim: [-20, 20]
+    columns:
+      - name: sin
+        label: Sinus [1]
+      - name: cos
+        label: Cosinus [1]
+      - name: tan
+        label: Tangens [1]
+        alt_y_axis: true

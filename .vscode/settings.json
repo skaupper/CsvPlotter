@@ -2,5 +2,6 @@
     "editor.formatOnSave": true,
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
-    "python.venvPath": "${workspaceFolder}/venv"
+    "python.venvPath": "${workspaceFolder}/venv",
+    "python.pythonPath": "${workspaceFolder}/venv/bin/python"
 }
