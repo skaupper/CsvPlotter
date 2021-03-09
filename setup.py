@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='csv-plotter-skaupper',
-    version='0.0.1',
+    version='0.0.2',
     author='Sebastian Kaupper',
     author_email='kauppersebastian@gmail.com',
     description='A simple to use CSV plotter',
@@ -29,6 +29,6 @@ setuptools.setup(
     install_requires=[
         'numpy>=1.15.0',
         'matplotlib>=3.0.0',
-        'pyyaml>=5.4'
+        'pyyaml>=5.1'
     ]
 )

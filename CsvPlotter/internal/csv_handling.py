@@ -51,7 +51,7 @@ class CsvData(object):
                 pass
 
             if val is None:
-                print(f'Unsupported value type of "{val_str}"!')
+                print(f'Unsupported value type of "{val_str}" {self.size}!')
                 return
 
             self.data[h][self.size] = val

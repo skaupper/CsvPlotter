@@ -1,5 +1,4 @@
 import yaml
-from math import log10, ceil
 
 from .internal import argument_parser, csv_handling, plotting
 from .internal import configuration as cfg
@@ -98,16 +97,18 @@ def __handle_plot_args(args):
 
 def __handle_util_args(args):
     if args.list_headers:
-        headers = csv_handling.read_headers(args.input_file)
-        print(f'Column headers found: {len(headers)}')
-        idx_width = ceil(log10(len(headers)))
-        for i, header in enumerate(headers):
-            print(f'  {i:{idx_width}} : {header}')
+        list_headers(args.input_file)
+    elif args.calc_metrics:
+        calc_metrics(args.input_file)
+    elif args.transform:
+        # TODO: add additional necessary arguments
+        transform_file(args.input_file)
 
 
 #
 # Public function which serve as application entrypoints
 #
+
 
 def plot():
     parser = argument_parser.create_plot_parser()
