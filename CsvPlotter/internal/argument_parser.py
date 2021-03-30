@@ -50,27 +50,17 @@ def __region_check(v):
 
 
 #
-# Private helpler functions
-#
-
-def __create_common_parser():
-    parser = argparse.ArgumentParser(add_help=False)
-    return parser
-
-
-#
 # Public parser generators
 #
 
-def create_plot_parser(generate_help=True):
-    parser = argparse.ArgumentParser(description='Plot the given CSV file.',
-                                     parents=[__create_common_parser()], add_help=generate_help)
+def create_plot_parser():
+    parser = argparse.ArgumentParser(description='Plot the given CSV file.')
 
-    parser.add_argument('-i', '--input-file',
+    parser.add_argument('-i', '--input', dest='input_file',
                         help='CSV data file', required=False)
     parser.add_argument('columns', type=str, nargs='*',
                         help='A list of columns that should be plotted. Both the column name and index are valid.', default=[])
-    parser.add_argument('-o', '--output-file', type=str,
+    parser.add_argument('-o', '--output', dest='output_file', type=str,
                         help='If specified, stores the plot in a file and prevents opening a plot window.\nThe file '
                              'format is determined using the default behaviour of matplotlib.pyplot.savefig!', required=False)
     parser.add_argument('-d', '--divider',      type=__divide_check,
@@ -86,22 +76,28 @@ def create_plot_parser(generate_help=True):
     return parser
 
 
-def create_utility_parser(generate_help=True):
-    parser = argparse.ArgumentParser(description='Provide utilities to process a CSV file in different ways.',
-                                     parents=[__create_common_parser()], add_help=generate_help)
+def create_utility_parser():
+    parser = argparse.ArgumentParser(
+        description='Provide utilities to process a CSV file in different ways.')
 
-    parser.add_argument('input-file', help='CSV data file')
+    parser.add_argument('input_file', help='CSV data file')
     parser.add_argument('-l', '--list-headers', action='store_true',
                         help='List all column headers found (all entries of the first row).', default=False)
+    parser.add_argument('-m', '--metrics', action='store_true', dest='calc_metrics',
+                        help='Calculate metrics for all available columns.', default=False)
     return parser
 
 
-def create_combined_parser():
-    plot_parser = create_plot_parser(False)
-    util_parser = create_utility_parser(False)
+def create_transformation_parser():
+    parser = argparse.ArgumentParser(
+        description='Allows to generate columns of a CSV file by specifying desired column names and expressions.')
 
-    parser = argparse.ArgumentParser()
-    sub_parsers = parser.add_subparsers(dest='chosen_command')
-    sub_parsers.add_parser('plot', parents=[plot_parser])
-    sub_parsers.add_parser('util', parents=[util_parser])
+    parser.add_argument('-i', '--input', dest='input_file',
+                        help='CSV data file', required=False)
+    parser.add_argument('-o', '--output', dest='output_file',
+                        help='The destination of the transformations applied to the input file (if any).',
+                        required=False)
+    parser.add_argument('col_expr',
+                        help='An expression describing the transformations which should be applied (More details needed...).',
+                        nargs='*')
     return parser

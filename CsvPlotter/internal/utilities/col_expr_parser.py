@@ -21,12 +21,41 @@
 # COLUMN_REF    = '$' IDENT '$'
 # VALUE_4       = FUNCTION_CALL | COLUMN_REF | LITERAL
 
+
+#
+# Interface classes and functions
+#
+
 class ColExprParseError(Exception):
     def __init__(self, message, remaining_string):
         self.message = message
         self.remaining_string = remaining_string
         super().__init__(self.message)
 
+
+class ColRef(object):
+    def __init__(self, name):
+        self.name = name
+
+
+class FunctionCall(object):
+    def __init__(self, name, argument):
+        self.name = name
+        self.argument = argument
+
+
+def parse_col_expr(s):
+    expr, s = __parse_col_expr(s)
+    if len(s) > 0:
+        raise ColExprParseError(
+            'Column expression did not consume the whole input string', s)
+
+    return expr
+
+
+#
+# Internal parse implementation
+#
 
 def __parse_ident(s):
     ''' IDENT = [a-zA-Z_][a-zA-Z_0-9]* '''
@@ -110,13 +139,39 @@ def __parse_literal(s):
 
 
 def __parse_function_call(s):
-    # TODO
-    pass
+    ''' FUNCTION_CALL = IDENT '(' VALUE ')' '''
+    name, s = __parse_ident(s)
+
+    if s[0] != '(':
+        raise ColExprParseError(
+            'The function call argument must be preceeded by an opening parenthesis', s)
+    s = s[1:].strip()
+
+    arg, s = __parse_value(s)
+
+    if s[0] != ')':
+        raise ColExprParseError(
+            'The function call argument must be preceeded by an closing parenthesis', s)
+    s = s[1:].strip()
+
+    return FunctionCall(name, arg), s
 
 
 def __parse_column_ref(s):
-    # TODO
-    pass
+    ''' COLUMN_REF = '$' IDENT '$' '''
+    if s[0] != '$':
+        raise ColExprParseError(
+            'A column reference must be started with a dollar sign', s)
+    s = s[1:]
+
+    name, s = __parse_ident(s)
+
+    if s[0] != '$':
+        raise ColExprParseError(
+            'A column reference must be ended with a dollar sign', s)
+    s = s[1:]
+
+    return ColRef(name), s
 
 
 def __parse_value4(s):
@@ -225,11 +280,6 @@ def __parse_col_expr(s):
 
     value, s = __parse_value(s)
     return (ident, value), s
-
-
-def transform_file(input_file, output_file, expressions):
-    # TODO
-    pass
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 
-from .utils import str2bool
+from .utils import str2bool, Range
 
 
 def read_headers(filename):
@@ -62,14 +62,18 @@ class CsvData(object):
         return f'CsvData{{size={self.size!r}, capacity={self.capacity!r}, headers={self.headers!r}, data={self.data!r}}}'
 
     @classmethod
-    def from_file(cls, config):
-        print(f'Extract data from file: {config.input_file}')
+    def from_config(cls, config):
+        return cls.from_file(config.input_file, config.range)
+
+    @classmethod
+    def from_file(cls, input_file, sample_range=Range()):
+        print(f'Extract data from file: {input_file}')
 
         PRINT_THRESHOLD = 1000000
 
-        data_obj = cls(read_headers(config.input_file))
+        data_obj = cls(read_headers(input_file))
 
-        with open(config.input_file, 'r') as f:
+        with open(input_file, 'r') as f:
             plots = csv.reader(f, delimiter=',')
             for i, row in enumerate(plots):
                 if i == 0:
@@ -81,8 +85,8 @@ class CsvData(object):
                     print(f'{data_index} samples read')
 
                 # If the end of the region has reached, exit the loop
-                if data_index not in config.range:
-                    if config.range.end is not None and data_index >= config.range.end:
+                if data_index not in sample_range:
+                    if sample_range.end is not None and data_index >= sample_range.end:
                         break
                     else:
                         continue

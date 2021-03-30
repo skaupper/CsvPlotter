@@ -2,7 +2,9 @@ import yaml
 
 from .internal import argument_parser, csv_handling, plotting
 from .internal import configuration as cfg
-from .internal.utils import Range
+from .internal.utilities.list_headers import list_headers
+from .internal.utilities.calc_metrics import calc_metrics
+from .internal.utilities.transform_file import transform_file
 
 
 #
@@ -74,7 +76,7 @@ def __handle_plot_args(args):
         raise ValueError(f'No input file is specified!')
 
     # Load data into RAM
-    data_obj = csv_handling.CsvData.from_file(plot_cfg)
+    data_obj = csv_handling.CsvData.from_config(plot_cfg)
     if data_obj.size == 0:
         return
 
@@ -100,9 +102,10 @@ def __handle_util_args(args):
         list_headers(args.input_file)
     elif args.calc_metrics:
         calc_metrics(args.input_file)
-    elif args.transform:
-        # TODO: add additional necessary arguments
-        transform_file(args.input_file)
+
+
+def __handle_transform_args(args):
+    transform_file(args.input_file, args.output_file, args.col_expr)
 
 
 #
@@ -116,20 +119,13 @@ def plot():
     __handle_plot_args(args)
 
 
+def transform():
+    parser = argument_parser.create_transformation_parser()
+    args = parser.parse_args()
+    __handle_transform_args(args)
+
+
 def util():
     parser = argument_parser.create_utility_parser()
     args = parser.parse_args()
     __handle_util_args(args)
-
-
-def combined():
-    parser = argument_parser.create_combined_parser()
-    args = parser.parse_args()
-
-    chosen_command = args.chosen_command
-    del args.chosen_command
-
-    if chosen_command == 'plot':
-        __handle_plot_args(args)
-    elif chosen_command == 'util':
-        __handle_util_args(args)

@@ -23,7 +23,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'csv_plot=CsvPlotter.entrypoints:plot',
-            'csv_util=CsvPlotter.entrypoints:util'
+            'csv_util=CsvPlotter.entrypoints:util',
+            'csv_transform=CsvPlotter.entrypoints:transform'
         ]
     },
     install_requires=[
