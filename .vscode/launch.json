@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: CsvPlotter",
             "type": "python",
             "request": "launch",
@@ -14,6 +21,23 @@
                 "plot",
                 "-c",
                 "angle_data_cfg.yml"
+            ],
+            "cwd": "${workspaceFolder}/doc"
+        },
+        {
+            "name": "Python: Transform",
+            "type": "python",
+            "request": "launch",
+            "module": "CsvPlotter.launcher",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "transform",
+                "-i",
+                "angle_data.csv",
+                "-o",
+                "angle_data_transformed.csv",
+                "new_sin =sin(#)"
             ],
             "cwd": "${workspaceFolder}/doc"
         }

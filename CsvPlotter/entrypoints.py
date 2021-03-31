@@ -105,7 +105,8 @@ def __handle_util_args(args):
 
 
 def __handle_transform_args(args):
-    transform_file(args.input_file, args.output_file, args.col_expr)
+    transform_file(args.input_file, args.output_file,
+                   args.col_expr, args.row_count)
 
 
 #

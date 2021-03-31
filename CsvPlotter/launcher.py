@@ -5,5 +5,15 @@
 #
 
 if __name__ == '__main__':
+    import sys
     from . import entrypoints
-    entrypoints.combined()
+
+    module = sys.argv[1]
+    del sys.argv[1]
+
+    if module == 'transform':
+        entrypoints.transform()
+    elif module == 'plot':
+        entrypoints.plot()
+    elif module == 'util':
+        entrypoints.util()

@@ -1,240 +1,72 @@
-# Expression Grammar:
+from .col_expr_parser import Literal, parse_col_expr, ColExprParseError
+from .col_expr_simplifier import simplify_expression
+from .. import csv_handling
+
 #
-# IDENT = [a-zA-Z_][a-zA-Z_0-9]*
-# NUMBER = [0-9]+
-# LITERAL = [-+]?[0-9]+(\.[0-9]+)?(e\-?[0-9]+)?
+# Public package entrypoint
 #
-# COL_EXPR      = [ IDENT '=' ] VALUE
-#
-# VALUE         = VALUE_1
-#
-# OPERATOR_1    = '%' | '^'
-# VALUE_1       = VALUE_2 [ OPERATOR_1 VALUE_1 ]
-#
-# OPERATOR_2    = '*' | '/'
-# VALUE_2       = VALUE_3 [ OPERATOR_2 VALUE_1 ]
-#
-# OPERATOR_3    = '+' | '-'
-# VALUE_3       = VALUE_4 [ OPERATOR_3 VALUE_1 ]
-#
-# FUNCTION_CALL = IDENT '(' VALUE ')'
-# COLUMN_REF    = '$' IDENT '$'
-# VALUE_4       = FUNCTION_CALL | COLUMN_REF | LITERAL
-
-class ColExprParseError(Exception):
-    def __init__(self, message, remaining_string):
-        self.message = message
-        self.remaining_string = remaining_string
-        super().__init__(self.message)
 
 
-def __parse_ident(s):
-    ''' IDENT = [a-zA-Z_][a-zA-Z_0-9]* '''
-
-    def is_underscore(c):
-        return c == '_'
-
-    if not(s[0].islower() or s[0].isupper() or is_underscore(s[0])):
-        raise ColExprParseError(
-            'Identifier did not start with a letter or an underscore', s)
-
-    i = 1
-    while s[i].isalnum() or is_underscore(s[i]):
-        i += 1
-
-    return s[:i], s[i:].strip()
-
-
-def __parse_number(s):
-    if not s[0].isdigit():
-        raise ColExprParseError(
-            'A number must start with a digit', s)
-
-    idx = 1
-    while s[idx].isdigit():
-        idx += 1
-
-    return int(s[:idx]), s[idx:].strip()
-
-
-def __parse_literal(s):
-    ''' LITERAL = \-?[0-9]+(\.[0-9]+)?(e\-?[0-9]+)? '''
-    sign = 1
-    exp = 0
-    integer = 0
-    decimal = 0
-
-    # Parse sign
-    if s[0] == '-':
-        sign = -1
-        s = s[1:]
-    elif s[0] == '+':
-        sign = 1
-        s = s[1:]
-
-    # Parse integer part
-    try:
-        integer, s = __parse_number(s)
-    except ColExprParseError as e:
-        raise ColExprParseError(
-            f'Failed to parse integer part of literal: {e.message}', s)
-
-    # Parse fractional part
-    if s[0] == '.':
+def transform_file(input_file, output_file, expressions, row_count):
+    # Preprocess the given expressions
+    processed_expressions = []
+    for expr in expressions:
         try:
-            decimal, s = __parse_number(s[1:])
-        except ColExprParseError as e:
-            raise ColExprParseError(
-                f'Failed to parse fractional part of literal: {e.message}', s)
-
-        while decimal > 0:
-            decimal /= 10.0
-
-    # Parse exponent
-    if s[0] == 'e':
-        s = s[1:]
-
-        # Parse sign of exponent
-        exp_sign = 1
-        if s[0] == '-':
-            exp_sign = -1
-            s = s[1:]
-        elif s[0] == '+':
-            s = s[1:]
-
-        exp, s = __parse_number(s)
-        exp *= exp_sign
-
-    # Assemble literal
-    return sign * (integer + decimal) * 10**exp, s
-
-
-def __parse_function_call(s):
-    # TODO
-    pass
-
-
-def __parse_column_ref(s):
-    # TODO
-    pass
-
-
-def __parse_value4(s):
-    ''' VALUE_4 = FUNCTION_CALL | COLUMN_REF | LITERAL '''
-    OPTIONS = [__parse_function_call, __parse_column_ref, __parse_literal]
-
-    for o in OPTIONS:
-        try:
-            return o(s)
+            processed_expressions.append(
+                simplify_expression(parse_col_expr(expr)))
         except ColExprParseError:
-            pass
+            print(f'Failed to parse column expression "{expr}"')
 
-    raise ColExprParseError('Could not find a match for VALUE_4', s)
+    transformed_columns = [{'name': a.ident, 'expr': a.value}
+                           for a in processed_expressions]
 
+    with open(output_file, 'w') as f:
+        headers = None
 
-def __parse_operator3(s):
-    ''' OPERATOR_3 = '+' | '-' '''
+        def iteration_handler(i, row):
+            nonlocal headers
+            nonlocal transformed_columns
 
-    OPS = ['*', '/']
-    if s[0] not in OPS:
-        raise ColExprParseError(f'Expected OPERATOR_3 but found "{s[0]}"', s)
+            # Generate header row
+            if i == 0:
+                headers = [str(head).strip() for head in row] + \
+                    [c['name'] for c in transformed_columns]
+                f.write(', '.join(headers) + '\n')
+                return
 
-    return s[0], s[1:].strip()
+            data_index = i-1
 
+            # Prepare column data for the transformation expression to use their data
+            col_data = {}
+            for i in range(len(row)):
+                col_data[headers[i]] = row[i]
 
-def __parse_value3(s):
-    ''' VALUE_3 = VALUE_4 [ OPERATOR_3 VALUE_1 ] '''
-    val1, s = __parse_value4(s)
-    try:
-        op, tmp_s = __parse_operator3(s)
-        val2, tmp_s = __parse_value1(tmp_s)
-        s = tmp_s
-    except ColExprParseError:
-        op = None
-        val2 = None
+            # TODO: allow to depend on not yet generated columns
+            resolved_expressions = [simplify_expression(c['expr'], data_index, col_data)
+                                    for c in transformed_columns]
 
-    return (val1, op, val2), s
+            # Sanity checks
+            if not all([isinstance(v, Literal) for v in resolved_expressions]):
+                raise TypeError(
+                    'Resolved expressions must be of type Literal!')
 
+            # Assemble given and generated data and write it to the output file
+            full_row_data = row + [lit.value for lit in resolved_expressions]
+            f.write(', '.join([str(d).strip() for d in full_row_data]) + '\n')
 
-def __parse_operator2(s):
-    ''' OPERATOR_2 = '*' | '/' '''
-
-    OPS = ['*', '/']
-    if s[0] not in OPS:
-        raise ColExprParseError(f'Expected OPERATOR_2 but found "{s[0]}"', s)
-
-    return s[0], s[1:].strip()
-
-
-def __parse_value2(s):
-    ''' VALUE_2 = VALUE_3 [ OPERATOR_2 VALUE_1 ] '''
-    val1, s = __parse_value3(s)
-    try:
-        op, tmp_s = __parse_operator2(s)
-        val2, tmp_s = __parse_value1(tmp_s)
-        s = tmp_s
-    except ColExprParseError:
-        op = None
-        val2 = None
-
-    return (val1, op, val2), s
-
-
-def __parse_operator1(s):
-    ''' OPERATOR_1 = '%' | '^' '''
-
-    OPS = ['%', '^']
-    if s[0] not in OPS:
-        raise ColExprParseError(f'Expected OPERATOR_1 but found "{s[0]}"', s)
-
-    return s[0], s[1:].strip()
-
-
-def __parse_value1(s):
-    ''' VALUE_1 = VALUE_2 [ OPERATOR_1 VALUE_2 ] '''
-    val1, s = __parse_value2(s)
-    try:
-        op, tmp_s = __parse_operator1(s)
-        val2, tmp_s = __parse_value1(tmp_s)
-        s = tmp_s
-    except ColExprParseError:
-        op = None
-        val2 = None
-
-    return (val1, op, val2), s
-
-
-def __parse_value(s):
-    ''' VALUE = VALUE_1 '''
-    return __parse_value1(s)
-
-
-def __parse_col_expr(s):
-    ''' COL_EXPR = [ IDENT '=' ] VALUE '''
-
-    # Try parsing [ IDENT '=' ]
-    try:
-        tmp_s = ''
-        ident, tmp_s = __parse_ident(s)
-        if tmp_s[0] != '=':
-            raise ColExprParseError(
-                'A COL_EXPR must separate its IDENT and VALUE using an equality sign')
-        s = tmp_s[1:].strip()
-    except ColExprParseError:
-        ident = None
-
-    value, s = __parse_value(s)
-    return (ident, value), s
-
-
-def transform_file(input_file, output_file, expressions):
-    # TODO
-    pass
+        # Call the iteration handler using the given CSV file or the given row count
+        if input_file is not None:
+            csv_handling.CsvData.iterate_over_lines(
+                input_file, iteration_handler)
+        elif row_count is not None:
+            for i in range(row_count+1):
+                iteration_handler(i, [])
 
 
 if __name__ == '__main__':
     s = 'diff_sin=$sin$ - $new_sin$'
-    print(f'Orig : {s}')
-    ident, s = __parse_ident(s)
-    print(f'Ident: {ident}')
-    print(f'Rem  : {s}')
+    expr = parse_col_expr(s)
+    expr.dump()
+    print()
+    simplify_expression(expr).dump()
+    print()

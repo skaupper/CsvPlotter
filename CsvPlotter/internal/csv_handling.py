@@ -71,30 +71,42 @@ class CsvData(object):
 
         PRINT_THRESHOLD = 1000000
 
-        data_obj = cls(read_headers(input_file))
+        data_obj = None
 
-        with open(input_file, 'r') as f:
-            plots = csv.reader(f, delimiter=',')
-            for i, row in enumerate(plots):
-                if i == 0:
-                    # The header is already read.
-                    continue
+        def iteration_handler(i, row):
+            nonlocal data_obj
 
-                data_index = i-1
-                if data_index % PRINT_THRESHOLD == 0 and data_index != 0:
-                    print(f'{data_index} samples read')
+            if i == 0:
+                data_obj = cls([str(head).strip() for head in row])
+                return
 
-                # If the end of the region has reached, exit the loop
-                if data_index not in sample_range:
-                    if sample_range.end is not None and data_index >= sample_range.end:
-                        break
-                    else:
-                        continue
+            data_index = i-1
+            if data_index % PRINT_THRESHOLD == 0 and data_index != 0:
+                print(f'{data_index} samples read')
 
-                data_obj.add_row(row)
+            # If the end of the region has reached, exit the loop
+            if data_index not in sample_range:
+                if sample_range.end is not None and data_index >= sample_range.end:
+                    return True
+                else:
+                    return
+
+            data_obj.add_row(row)
+
+        cls.iterate_over_lines(input_file, iteration_handler)
 
         if data_obj.size == 0:
             print('No relevant samples stored!')
         else:
             print(f'Finished: {data_obj.size} samples read')
         return data_obj
+
+    @classmethod
+    def iterate_over_lines(cls, input_file, handler=None):
+        with open(input_file, 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            for i, row in enumerate(reader):
+                if handler is not None:
+                    exit_loop = handler(i, row)
+                    if exit_loop:
+                        break

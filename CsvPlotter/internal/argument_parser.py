@@ -97,6 +97,9 @@ def create_transformation_parser():
     parser.add_argument('-o', '--output', dest='output_file',
                         help='The destination of the transformations applied to the input file (if any).',
                         required=False)
+    parser.add_argument('-n', '--row-count', type=int,
+                        help='If no input file is given, this value is used to generate the corresponding amount of CSV rows.',
+                        required=False)
     parser.add_argument('col_expr',
                         help='An expression describing the transformations which should be applied (More details needed...).',
                         nargs='*')
