@@ -21,9 +21,9 @@
 # COLUMN_REF    = '$' IDENT '$'
 # ROW_ID        = '#'
 # PAREN_VALUE   = '(' VALUE ')'
-# VALUE_4       = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID | PAREN_VALUE
+# CONSTANT      = IDENT
+# VALUE_4       = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID | PAREN_VALUE | CONSTANT
 
-# TODO: introduce constants like pi, e, etc.
 
 #
 # Interface classes and functions
@@ -85,6 +85,14 @@ class Operator(object):
 
     def __repr__(self):
         return f'Operator{{op={self.op!r}}}'
+
+
+class Constant(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return f'Constant{{name={self.name!r}}}'
 
 
 class Assignment(object):
@@ -296,10 +304,17 @@ def __parse_paren_value(s):
     return val, s
 
 
+def __parse_constant(s):
+    ''' CONSTANT = IDENT '''
+    ident, s = __parse_ident(s)
+    return Constant(ident), s
+
+
 def __parse_value4(s):
-    ''' VALUE_4 = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID '''
+    ''' VALUE_4 = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID | CONSTANT '''
     OPTIONS = [__parse_function_call, __parse_column_ref,
-               __parse_literal, __parse_row_id, __parse_paren_value]
+               __parse_literal, __parse_row_id, __parse_paren_value,
+               __parse_constant]
 
     for o in OPTIONS:
         try:

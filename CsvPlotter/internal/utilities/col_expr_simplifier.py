@@ -1,4 +1,4 @@
-from .col_expr_parser import Literal, Value, FunctionCall, Assignment, ColRef, RowId
+from .col_expr_parser import Literal, Value, FunctionCall, Assignment, ColRef, RowId, Constant
 
 import math
 
@@ -15,7 +15,6 @@ def __apply_operator(op, arg1, arg2):
         '/': lambda a1, a2: a1 / a2 if a2 != 0 else math.nan,
         '%': lambda a1, a2: a1 % a2 if a2 != 0 else math.nan,
         '^': lambda a1, a2: a1 ** a2,
-        # TODO: add more operators if necessary
     }
 
     if op not in OPS:
@@ -36,13 +35,29 @@ def __apply_function(func, arg):
         'log': lambda a: math.log(a) if a > 0 else math.nan,
         'log10': lambda a: math.log10(a) if a > 0 else math.nan,
         'log2': lambda a: math.log2(a) if a > 0 else math.nan,
-        # TODO: add more functions if necessary
     }
 
     if func not in FUNCS:
         raise KeyError(f'Unknown function "{func}"')
 
     return FUNCS[func](arg.value)
+
+
+def __apply_constant(const):
+    CONSTANTS = {
+        'e': math.e,
+        'pi': math.pi,
+        'tau': math.tau,
+        'inf': math.inf,
+        'nan': math.nan
+    }
+
+    const = const.lower()
+
+    if const not in CONSTANTS:
+        raise KeyError(f'Unknown Constant "{const}"')
+
+    return CONSTANTS[const]
 
 
 #
@@ -89,6 +104,10 @@ def __simplify_value(value, row_id, csv_row):
         return __resolve_col_ref(value, csv_row)
     if isinstance(value, RowId):
         return __resolve_row_id(value, row_id)
+
+    # Try to resolve a constant
+    if isinstance(value, Constant):
+        return Literal(__apply_constant(value.name))
 
     # Try simplifying functions calls. In the best case it can be precalculated and stored as a literal.
     if isinstance(value, FunctionCall):
