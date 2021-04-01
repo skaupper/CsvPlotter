@@ -25,105 +25,96 @@
 # VALUE_4       = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID | PAREN_VALUE | CONSTANT
 
 
+from dataclasses import dataclass
+from typing import Optional, Tuple, Union
+
+
 #
 # Interface classes and functions
 #
 
 class ColExprParseError(Exception):
-    def __init__(self, message, remaining_string):
+    def __init__(self, message: str, remaining_string: str):
         self.message = message
         self.remaining_string = remaining_string
         super().__init__(self.message)
 
 
-class ColRef(object):
-    def __init__(self, name):
-        self.name = name
+ValueType = Union['Value', 'Constant', 'RowId',
+                  'ColRef', 'Literal', 'FunctionCall']
 
-    def __repr__(self):
-        return f'ColRef{{name={self.name!r}}}'
 
-    def dump(self, indent=0, incr=4):
+@dataclass
+class ColRef:
+    name: str
+
+    def dump(self, indent: int = 0, incr: int = 4):
         print(f'{" ": >{indent}}ColRef (name: {self.name})')
 
 
-class FunctionCall(object):
-    def __init__(self, name, argument):
-        self.name = name
-        self.argument = argument
+@dataclass
+class FunctionCall:
+    name: str
+    argument: ValueType
 
-    def __repr__(self):
-        return f'FunctionCall{{name={self.name!r}, argument="{self.argument!r}"}}'
-
-    def dump(self, indent=0, incr=4):
+    def dump(self, indent: int = 0, incr: int = 4):
         print(f'{" ": >{indent}}FunctionCall (name: {self.name})')
         self.argument.dump(indent + incr)
 
 
-class Literal(object):
-    def __init__(self, value):
-        self.value = value
+@dataclass
+class Literal:
+    value: float
 
-    def __repr__(self):
-        return f'Literal{{value={self.value!r}}}'
-
-    def dump(self, indent=0, incr=4):
+    def dump(self, indent: int = 0, incr: int = 4):
         print(f'{" ": >{indent}}Literal: {self.value}')
 
 
-class RowId(object):
-    def __repr__(self):
-        return f'RowId{{}}'
-
-    def dump(self, indent=0, incr=4):
+@dataclass
+class RowId:
+    def dump(self, indent: int = 0, incr: int = 4):
         print(f'{" ": >{indent}}RowId: #')
 
 
-class Operator(object):
-    def __init__(self, op):
-        self.op = op
-
-    def __repr__(self):
-        return f'Operator{{op={self.op!r}}}'
+@dataclass
+class Operator:
+    op: str
 
 
-class Constant(object):
-    def __init__(self, name):
-        self.name = name
+@dataclass
+class Constant:
+    name: str
 
-    def __repr__(self):
-        return f'Constant{{name={self.name!r}}}'
+    def dump(self, indent: int = 0, incr: int = 4):
+        print(f'{" ": >{indent}}Constant: #')
 
 
-class Assignment(object):
-    def __init__(self, ident, value):
-        self.ident = ident
-        self.value = value
+@dataclass
+class Value:
+    arg1: ValueType
+    op: Optional[Operator]
+    arg2: Optional[ValueType]
 
-    def __repr__(self):
-        return f'Assignment{{ident={self.ident!r}, value={self.value!r}}}'
+    def dump(self, indent: int = 0, incr: int = 4):
+        print(f'{" ": >{indent}}Value (operator: '
+              f'{self.op.op if self.op is not None else ""})')
 
-    def dump(self, indent=0, incr=4):
+        self.arg1.dump(indent + incr)
+        if self.arg2 is not None:
+            self.arg2.dump(indent + incr)
+
+
+@dataclass
+class Assignment:
+    ident: str
+    value: ValueType
+
+    def dump(self, indent: int = 0, incr: int = 4):
         print(f'{" ": >{indent}}Assignment (target: {self.ident})')
         self.value.dump(indent + incr)
 
 
-class Value(object):
-    def __init__(self, arg1, op, arg2):
-        self.arg1 = arg1
-        self.op = op
-        self.arg2 = arg2
-
-    def __repr__(self):
-        return f'Value{{arg1="{self.arg1!r}", op={self.op!r}, arg2="{self.arg2!r}"}}'
-
-    def dump(self, indent=0, incr=4):
-        print(f'{" ": >{indent}}Value (operator: {self.op.op})')
-        self.arg1.dump(indent + incr)
-        self.arg2.dump(indent + incr)
-
-
-def parse_col_expr(s):
+def parse_col_expr(s: str) -> Union[Assignment, ValueType]:
     expr, s = __parse_col_expr(s)
     if len(s) > 0:
         raise ColExprParseError(
@@ -136,10 +127,10 @@ def parse_col_expr(s):
 # Internal parse implementation
 #
 
-def __parse_ident(s):
+def __parse_ident(s: str) -> Tuple[str, str]:
     ''' IDENT = [a-zA-Z_][a-zA-Z_0-9]* '''
 
-    def is_underscore(c):
+    def is_underscore(c: str) -> bool:
         return c == '_'
 
     if len(s) == 0:
@@ -156,7 +147,7 @@ def __parse_ident(s):
     return s[:idx], s[idx:].strip()
 
 
-def __parse_number(s):
+def __parse_number(s: str) -> Tuple[int, str]:
     ''' NUMBER = [0-9]+ '''
     if len(s) == 0:
         raise ColExprParseError('Input string is empty', s)
@@ -172,8 +163,8 @@ def __parse_number(s):
     return int(s[:idx]), s[idx:].strip()
 
 
-def __parse_literal(s):
-    ''' LITERAL = \-?[0-9]+(\.[0-9]+)?(e\-?[0-9]+)? '''
+def __parse_literal(s: str) -> Tuple[Literal, str]:
+    ''' LITERAL = \\-?[0-9]+(\\.[0-9]+)?(e\\-?[0-9]+)? '''
     sign = 1
     exp = 0
     integer = 0
@@ -226,7 +217,7 @@ def __parse_literal(s):
     return Literal(sign * (integer + decimal) * 10**exp), s
 
 
-def __parse_function_call(s):
+def __parse_function_call(s: str) -> Tuple[FunctionCall, str]:
     ''' FUNCTION_CALL = IDENT '(' VALUE ')' '''
     name, s = __parse_ident(s)
 
@@ -249,7 +240,7 @@ def __parse_function_call(s):
     return FunctionCall(name, arg), s
 
 
-def __parse_column_ref(s):
+def __parse_column_ref(s: str) -> Tuple[ColRef, str]:
     ''' COLUMN_REF = '$' IDENT '$' '''
 
     if len(s) == 0:
@@ -271,7 +262,7 @@ def __parse_column_ref(s):
     return ColRef(name), s
 
 
-def __parse_row_id(s):
+def __parse_row_id(s: str) -> Tuple[RowId, str]:
     ''' ROW_ID = '#' '''
 
     if len(s) == 0:
@@ -282,7 +273,7 @@ def __parse_row_id(s):
     return RowId(), s[1:].strip()
 
 
-def __parse_paren_value(s):
+def __parse_paren_value(s: str) -> Tuple[ValueType, str]:
     ''' PAREN_VALUE = '(' VALUE ')' '''
 
     if len(s) == 0:
@@ -304,13 +295,13 @@ def __parse_paren_value(s):
     return val, s
 
 
-def __parse_constant(s):
+def __parse_constant(s: str) -> Tuple[Constant, str]:
     ''' CONSTANT = IDENT '''
     ident, s = __parse_ident(s)
     return Constant(ident), s
 
 
-def __parse_value4(s):
+def __parse_value4(s: str) -> Tuple[ValueType, str]:
     ''' VALUE_4 = FUNCTION_CALL | COLUMN_REF | LITERAL | ROW_ID | CONSTANT '''
     OPTIONS = [__parse_function_call, __parse_column_ref,
                __parse_literal, __parse_row_id, __parse_paren_value,
@@ -325,7 +316,7 @@ def __parse_value4(s):
     raise ColExprParseError('Could not find a match for VALUE_4', s)
 
 
-def __parse_operator3(s):
+def __parse_operator3(s: str) -> Tuple[Operator, str]:
     ''' OPERATOR_3 = '%' | '^' '''
 
     if len(s) == 0:
@@ -338,7 +329,7 @@ def __parse_operator3(s):
     return Operator(s[0]), s[1:].strip()
 
 
-def __parse_value3(s):
+def __parse_value3(s: str) -> Tuple[ValueType, str]:
     ''' VALUE_3 = VALUE_4 { OPERATOR_3 VALUE_4 } '''
     val, s = __parse_value4(s)
 
@@ -355,7 +346,7 @@ def __parse_value3(s):
     return val, s
 
 
-def __parse_operator2(s):
+def __parse_operator2(s: str) -> Tuple[Operator, str]:
     ''' OPERATOR_2 = '*' | '/' '''
 
     if len(s) == 0:
@@ -368,7 +359,7 @@ def __parse_operator2(s):
     return Operator(s[0]), s[1:].strip()
 
 
-def __parse_value2(s):
+def __parse_value2(s: str) -> Tuple[ValueType, str]:
     ''' VALUE_2 = VALUE_3 { OPERATOR_2 VALUE_3 } '''
     val, s = __parse_value3(s)
 
@@ -385,7 +376,7 @@ def __parse_value2(s):
     return val, s
 
 
-def __parse_operator1(s):
+def __parse_operator1(s: str) -> Tuple[Operator, str]:
     ''' OPERATOR_1 = '+' | '-' '''
 
     if len(s) == 0:
@@ -398,7 +389,7 @@ def __parse_operator1(s):
     return Operator(s[0]), s[1:].strip()
 
 
-def __parse_value1(s):
+def __parse_value1(s: str) -> Tuple[ValueType, str]:
     ''' VALUE_1 = VALUE_2 { OPERATOR_1 VALUE_2 } '''
     val, s = __parse_value2(s)
 
@@ -415,12 +406,12 @@ def __parse_value1(s):
     return val, s
 
 
-def __parse_value(s):
+def __parse_value(s: str) -> Tuple[ValueType, str]:
     ''' VALUE = VALUE_1 '''
     return __parse_value1(s)
 
 
-def __parse_col_expr(s):
+def __parse_col_expr(s: str) -> Tuple[Union[Assignment, ValueType], str]:
     ''' COL_EXPR = [ IDENT '=' ] VALUE '''
 
     # Try parsing [ IDENT '=' ]

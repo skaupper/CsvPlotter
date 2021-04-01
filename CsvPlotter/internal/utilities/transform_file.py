@@ -1,29 +1,36 @@
-from .col_expr_parser import Literal, parse_col_expr, ColExprParseError
+from typing import Dict, List, Optional, TypedDict
+from .col_expr_parser import Assignment, Literal, ValueType, parse_col_expr, ColExprParseError
 from .col_expr_simplifier import simplify_expression
 from .. import csv_handling
+
+
+class TransformedColumn(TypedDict):
+    name: str
+    expr: ValueType
 
 #
 # Public package entrypoint
 #
 
 
-def transform_file(input_file, output_file, expressions, row_count):
+def transform_file(input_file: Optional[str], output_file: str, expressions: List[str], row_count: Optional[int]):
     # Preprocess the given expressions
-    processed_expressions = []
+    processed_expressions: List[Assignment] = []
     for expr in expressions:
         try:
-            processed_expressions.append(
-                simplify_expression(parse_col_expr(expr)))
+            e = simplify_expression(parse_col_expr(expr))
+            assert isinstance(e, Assignment)
+            processed_expressions.append(e)
         except ColExprParseError:
             print(f'Failed to parse column expression "{expr}"')
 
-    transformed_columns = [{'name': a.ident, 'expr': a.value}
-                           for a in processed_expressions]
+    transformed_columns: List[TransformedColumn] = [{'name': a.ident, 'expr': a.value}
+                                                    for a in processed_expressions]
 
     with open(output_file, 'w') as f:
-        headers = None
+        headers: List[str] = []
 
-        def iteration_handler(i, row):
+        def iteration_handler(i: int, row: List[str]) -> Optional[bool]:
             nonlocal headers
             nonlocal transformed_columns
 
@@ -37,22 +44,24 @@ def transform_file(input_file, output_file, expressions, row_count):
             data_index = i-1
 
             # Prepare column data for the transformation expression to use their data
-            col_data = {}
+            col_data: Dict[str, float] = {}
             for i in range(len(row)):
-                col_data[headers[i]] = row[i]
+                col_data[headers[i]] = float(row[i])
 
             # TODO: allow to depend on not yet generated columns
-            resolved_expressions = [simplify_expression(c['expr'], data_index, col_data)
-                                    for c in transformed_columns]
+            resolved_expressions: List[Literal] = []
 
-            # Sanity checks
-            if not all([isinstance(v, Literal) for v in resolved_expressions]):
-                raise TypeError(
-                    'Resolved expressions must be of type Literal!')
+            for c in transformed_columns:
+                e = simplify_expression(c['expr'], data_index, col_data)
+                if not isinstance(e, Literal):
+                    raise TypeError(
+                        'Resolved expressions must be of type Literal!')
+                resolved_expressions.append(e)
 
-            # Assemble given and generated data and write it to the output file
-            full_row_data = row + [lit.value for lit in resolved_expressions]
-            f.write(', '.join([str(d).strip() for d in full_row_data]) + '\n')
+                # Assemble given and generated data and write it to the output file
+            full_row_data = row + [str(lit.value)
+                                   for lit in resolved_expressions]
+            f.write(', '.join([d.strip() for d in full_row_data]) + '\n')
 
         # Call the iteration handler using the given CSV file or the given row count
         if input_file is not None:

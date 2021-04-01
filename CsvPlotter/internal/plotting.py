@@ -1,5 +1,12 @@
+from CsvPlotter.internal.utils import Range
+from typing import List, Optional
+from matplotlib.axes import Axes
+from matplotlib.lines import Line2D
+
+from CsvPlotter.internal.configuration import PlotConfig, SubplotConfig
+from CsvPlotter.internal.csv_handling import CsvData
 import signal
-from math import ceil, floor
+from math import ceil
 import matplotlib.pyplot as plt
 
 
@@ -7,7 +14,7 @@ import matplotlib.pyplot as plt
 # Private helper functions
 #
 
-def __get_index_list(rng, nr_of_indices=None):
+def __get_index_list(rng: Range, nr_of_indices: Optional[int] = None) -> range:
     start = rng.start if rng.start is not None else 0
 
     corr_start_idx = int(ceil(float(start) / rng.divider) * rng.divider)
@@ -21,14 +28,15 @@ def __get_index_list(rng, nr_of_indices=None):
     return range(corr_start_idx, corr_end_idx, rng.divider)
 
 
-def __plot_subplot(data_obj, config, subplot, axis):
+def __plot_subplot(data_obj: CsvData, config: PlotConfig, subplot: SubplotConfig, axis: Axes):
     LINE_STYLE = '.-'
 
-    line_objects = []
-    labels = []
+    line_objects: List[Line2D] = []
+    labels: List[str] = []
 
     x = __get_index_list(config.range, data_obj.size)
-    alt_axis = None
+    alt_axis: Optional[Axes] = None
+    curr_axis: Axes
 
     for i, col in enumerate(subplot.columns):
         # Determine the correct axis to plot to
@@ -37,6 +45,7 @@ def __plot_subplot(data_obj, config, subplot, axis):
         else:
             if alt_axis is None:
                 alt_axis = axis.twinx()
+            assert alt_axis is not None
             curr_axis = alt_axis
 
         y = data_obj.data[col.name][:data_obj.size]
@@ -66,7 +75,7 @@ def __plot_subplot(data_obj, config, subplot, axis):
 # Public plotting function
 #
 
-def plot_csv_data(data_obj, config):
+def plot_csv_data(data_obj: CsvData, config: PlotConfig):
     # Make sure Ctrl+C in the terminal closes the plot
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 

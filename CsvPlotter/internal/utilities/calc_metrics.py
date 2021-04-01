@@ -1,7 +1,7 @@
 from .. import csv_handling
 
 
-def calc_metrics(input_file):
+def calc_metrics(input_file: str):
     data_obj = csv_handling.CsvData.from_file(input_file)
     for h in data_obj.headers:
         print('Column "{}"'.format(h))

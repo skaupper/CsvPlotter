@@ -1,3 +1,4 @@
+from argparse import Namespace
 import yaml
 
 from .internal import argument_parser, csv_handling, plotting
@@ -11,7 +12,7 @@ from .internal.utilities.transform_file import transform_file
 # Private helper functions for handling different subcommands
 #
 
-def __resolve_column_id(data_obj, col_id):
+def __resolve_column_id(data_obj: csv_handling.CsvData, col_id: str):
     # First interpret col_id as header name
     try:
         idx = data_obj.headers.index(col_id)
@@ -32,7 +33,7 @@ def __resolve_column_id(data_obj, col_id):
     return data_obj.headers[idx]
 
 
-def __handle_plot_args(args):
+def __handle_plot_args(args: Namespace):
     if 'yaml_config' in args and args.yaml_config is not None:
         # Construct config from YAML file and update values with command line arguments
         try:
@@ -97,14 +98,14 @@ def __handle_plot_args(args):
     plotting.plot_csv_data(data_obj, plot_cfg)
 
 
-def __handle_util_args(args):
+def __handle_util_args(args: Namespace):
     if args.list_headers:
         list_headers(args.input_file)
     elif args.calc_metrics:
         calc_metrics(args.input_file)
 
 
-def __handle_transform_args(args):
+def __handle_transform_args(args: Namespace):
     transform_file(args.input_file, args.output_file,
                    args.col_expr, args.row_count)
 

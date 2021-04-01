@@ -1,4 +1,5 @@
-from .col_expr_parser import Literal, Value, FunctionCall, Assignment, ColRef, RowId, Constant
+from typing import Callable, Dict, Optional, Union
+from .col_expr_parser import Literal, Value, FunctionCall, Assignment, ColRef, RowId, Constant, ValueType
 
 import math
 
@@ -7,8 +8,8 @@ import math
 # Actual math functions
 #
 
-def __apply_operator(op, arg1, arg2):
-    OPS = {
+def __apply_operator(op: str, arg1: Literal, arg2: Literal) -> float:
+    OPS: Dict[str, Callable[[float, float], float]] = {
         '+': lambda a1, a2: a1 + a2,
         '-': lambda a1, a2: a1 - a2,
         '*': lambda a1, a2: a1 * a2,
@@ -23,8 +24,8 @@ def __apply_operator(op, arg1, arg2):
     return OPS[op](arg1.value, arg2.value)
 
 
-def __apply_function(func, arg):
-    FUNCS = {
+def __apply_function(func: str, arg: Literal) -> float:
+    FUNCS: Dict[str, Callable[[float], float]] = {
         'sin': lambda a: math.sin(a),
         'cos': lambda a: math.cos(a),
         'tan': lambda a: math.tan(a),
@@ -43,7 +44,7 @@ def __apply_function(func, arg):
     return FUNCS[func](arg.value)
 
 
-def __apply_constant(const):
+def __apply_constant(const: str) -> float:
     CONSTANTS = {
         'e': math.e,
         'pi': math.pi,
@@ -64,7 +65,7 @@ def __apply_constant(const):
 # Functions which are responsible for resolving runtime information
 #
 
-def __resolve_col_ref(value, csv_row):
+def __resolve_col_ref(value: ColRef, csv_row: Optional[Dict[str, float]]) -> Union[ColRef, Literal]:
     if csv_row is None:
         return value
 
@@ -74,7 +75,7 @@ def __resolve_col_ref(value, csv_row):
     return Literal(float(csv_row[value.name]))
 
 
-def __resolve_row_id(value, row_id):
+def __resolve_row_id(value: RowId, row_id: Optional[int]) -> Union[RowId, Literal]:
     if row_id is None:
         return value
     return Literal(row_id)
@@ -84,7 +85,7 @@ def __resolve_row_id(value, row_id):
 # Recursive simplification functions
 #
 
-def __simplify_function_call(name, value, row_id, csv_row):
+def __simplify_function_call(name: str, value: ValueType, row_id: Optional[int], csv_row: Optional[Dict[str, float]]) -> Union[Literal, FunctionCall]:
     arg = __simplify_value(value, row_id, csv_row)
 
     # The results of functions with literal arguments can be precalculated
@@ -94,7 +95,7 @@ def __simplify_function_call(name, value, row_id, csv_row):
     return FunctionCall(name, arg)
 
 
-def __simplify_value(value, row_id, csv_row):
+def __simplify_value(value: ValueType, row_id: Optional[int], csv_row: Optional[Dict[str, float]]) -> ValueType:
     # Literals cannot be simplified further
     if isinstance(value, Literal):
         return value
@@ -114,6 +115,8 @@ def __simplify_value(value, row_id, csv_row):
         return __simplify_function_call(value.name, value.argument, row_id, csv_row)
 
     # Otherwise, try to simplify both arguments of the given value
+    assert isinstance(value, Value)
+    assert value.arg2 is not None and value.op is not None
     simple_arg1 = __simplify_value(value.arg1, row_id, csv_row)
     simple_arg2 = __simplify_value(value.arg2, row_id, csv_row)
 
@@ -129,9 +132,9 @@ def __simplify_value(value, row_id, csv_row):
 # Public simplification entrypoint
 #
 
-def simplify_expression(expr, row_id=None, csv_row=None):
+def simplify_expression(expr: Union[ValueType, Assignment], row_id: Optional[int] = None, csv_row: Optional[Dict[str, float]] = None) -> Union[ValueType, Assignment]:
     # Ignore the Assignment wrapper, if present
-    if type(expr) == Assignment:
+    if isinstance(expr, Assignment):
         expr.value = __simplify_value(expr.value, row_id, csv_row)
     else:
         expr = __simplify_value(expr, row_id, csv_row)

@@ -1,24 +1,25 @@
 import argparse
+from typing import Optional, Tuple
 
 
 #
 # Argument type checkers
 #
 
-def __divide_check(v):
+def __divide_check(v: str) -> int:
     # Only positive integers are allowed as a divider.
 
     error = True
     try:
-        v = int(v)
-        error = v < 1
+        res = int(v)
+        error = res < 1
     finally:
         if error:
             raise argparse.ArgumentTypeError('Positive integer expected')
-    return v
+    return res
 
 
-def __region_check(v):
+def __region_check(v: str) -> Optional[Tuple[int, Optional[int]]]:
     # The region of samples to be plotted should be given in the form START:END.
     # Negative values for either of START or END represent the first resp. the last sample (i.e. a value of None for END
     # sets END to the index of the last sample).
@@ -32,13 +33,13 @@ def __region_check(v):
         v = str(v)
         region = v.split(':')
         if len(region) != 2:
-            raise argparse.ArgumentError()
+            raise ValueError()
         start = int(region[0]) if len(region[0]) > 0 else 0
         end = int(region[1]) if len(region[1]) > 0 else None
 
         if start < 0:
             start = 0
-        if end < 0:
+        if end is not None and end < 0:
             end = None
 
         error = False
@@ -53,7 +54,7 @@ def __region_check(v):
 # Public parser generators
 #
 
-def create_plot_parser():
+def create_plot_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Plot the given CSV file.')
 
     parser.add_argument('-i', '--input', dest='input_file',
@@ -76,7 +77,7 @@ def create_plot_parser():
     return parser
 
 
-def create_utility_parser():
+def create_utility_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description='Provide utilities to process a CSV file in different ways.')
 
@@ -88,7 +89,7 @@ def create_utility_parser():
     return parser
 
 
-def create_transformation_parser():
+def create_transformation_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description='Allows to generate columns of a CSV file by specifying desired column names and expressions.')
 
