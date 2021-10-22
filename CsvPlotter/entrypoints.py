@@ -12,6 +12,7 @@ from .internal.utilities.transform_file import transform_file
 # Private helper functions for handling different subcommands
 #
 
+
 def __resolve_column_id(data_obj: csv_handling.CsvData, col_id: str):
     # First interpret col_id as header name
     try:
@@ -27,17 +28,17 @@ def __resolve_column_id(data_obj: csv_handling.CsvData, col_id: str):
         return None
 
     if idx >= len(data_obj.headers):
-        print(f'Given column index {idx} is out of range!')
+        print(f"Given column index {idx} is out of range!")
         return None
 
     return data_obj.headers[idx]
 
 
 def __handle_plot_args(args: Namespace):
-    if 'yaml_config' in args and args.yaml_config is not None:
+    if "yaml_config" in args and args.yaml_config is not None:
         # Construct config from YAML file and update values with command line arguments
         try:
-            with open(args.yaml_config, 'r') as f:
+            with open(args.yaml_config, "r") as f:
                 yaml_config = yaml.safe_load(f)
         except yaml.YAMLError as ex:
             print(f'Failed to load config file "{args.yaml_config}": {ex}')
@@ -45,36 +46,41 @@ def __handle_plot_args(args: Namespace):
 
         plot_cfg = cfg.PlotConfig.from_obj(yaml_config)
 
-        if 'input_file' in args and args.input_file is not None:
+        if "input_file" in args and args.input_file is not None:
             if len(args.input_file) == 0:
                 plot_cfg.input_file = None
             else:
                 plot_cfg.input_file = args.input_file
-        if 'output_file' in args and args.output_file is not None:
+        if "output_file" in args and args.output_file is not None:
             if len(args.output_file) == 0:
                 plot_cfg.output_file = None
             else:
                 plot_cfg.output_file = args.output_file
-        if 'region' in args and args.region is not None:
+        if "region" in args and args.region is not None:
             plot_cfg.range.start = args.region[0]
-            plot_cfg.range.end = args.region[1] + \
-                1 if args.region[1] is not None else None
-        if 'divider' in args and args.divider is not None:
+            plot_cfg.range.end = (
+                args.region[1] + 1 if args.region[1] is not None else None
+            )
+        if "divider" in args and args.divider is not None:
             plot_cfg.range.divider = args.divider
 
     else:
         # Construct config from command line arguments
-        plot_cfg = cfg.PlotConfig.from_obj({
-            'input_file': args.input_file,
-            'output_file': args.output_file,
-            'range_start': args.region[0] if args.region is not None else None,
-            'range_end': args.region[1] if args.region is not None else None,
-            'divider': args.divider,
-        })
+        plot_cfg = cfg.PlotConfig.from_obj(
+            {
+                "input_file": args.input_file,
+                "output_file": args.output_file,
+                "xlim": (
+                    args.region[0] if args.region is not None else None,
+                    args.region[1] if args.region is not None else None,
+                ),
+                "divider": args.divider,
+            }
+        )
 
     # Validity checks
     if plot_cfg.input_file is None or len(plot_cfg.input_file) == 0:
-        raise ValueError(f'No input file is specified!')
+        raise ValueError(f"No input file is specified!")
 
     # Load data into RAM
     data_obj = csv_handling.CsvData.from_config(plot_cfg)
@@ -87,8 +93,10 @@ def __handle_plot_args(args: Namespace):
         for col_id in args.columns:
             col_name = __resolve_column_id(data_obj, col_id)
             if col_name is None:
-                print(f'Unable to resolve column "{col_id}"! '
-                      'Make sure you either pass a column name or an index!')
+                print(
+                    f'Unable to resolve column "{col_id}"! '
+                    "Make sure you either pass a column name or an index!"
+                )
                 continue
 
             subplot_cfg.add_column(cfg.ColumnConfig(col_name))
@@ -106,8 +114,13 @@ def __handle_util_args(args: Namespace):
 
 
 def __handle_transform_args(args: Namespace):
-    transform_file(args.input_file, args.output_file,
-                   args.col_expr, args.row_count)
+    transform_file(
+        args.input_file,
+        args.output_file,
+        args.col_expr,
+        args.row_count,
+        args.include_input_columns,
+    )
 
 
 #

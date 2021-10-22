@@ -3,5 +3,11 @@
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
     "python.venvPath": "${workspaceFolder}/venv",
-    "python.analysis.typeCheckingMode": "strict"
+    "python.analysis.typeCheckingMode": "strict",
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#332E09",
+        "titleBar.activeBackground": "#47400C",
+        "titleBar.activeForeground": "#FCFAEE"
+    },
+    "python.formatting.provider": "black"
 }

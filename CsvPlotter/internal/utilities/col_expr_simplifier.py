@@ -1,5 +1,14 @@
 from typing import Callable, Dict, Optional, Union
-from .col_expr_parser import Literal, Value, FunctionCall, Assignment, ColRef, RowId, Constant, ValueType
+from .col_expr_parser import (
+    Literal,
+    Value,
+    FunctionCall,
+    Assignment,
+    ColRef,
+    RowId,
+    Constant,
+    ValueType,
+)
 
 import math
 
@@ -8,14 +17,15 @@ import math
 # Actual math functions
 #
 
+
 def __apply_operator(op: str, arg1: Literal, arg2: Literal) -> float:
     OPS: Dict[str, Callable[[float, float], float]] = {
-        '+': lambda a1, a2: a1 + a2,
-        '-': lambda a1, a2: a1 - a2,
-        '*': lambda a1, a2: a1 * a2,
-        '/': lambda a1, a2: a1 / a2 if a2 != 0 else math.nan,
-        '%': lambda a1, a2: a1 % a2 if a2 != 0 else math.nan,
-        '^': lambda a1, a2: a1 ** a2,
+        "+": lambda a1, a2: a1 + a2,
+        "-": lambda a1, a2: a1 - a2,
+        "*": lambda a1, a2: a1 * a2,
+        "/": lambda a1, a2: a1 / a2 if a2 != 0 else math.nan,
+        "%": lambda a1, a2: a1 % a2 if a2 != 0 else math.nan,
+        "^": lambda a1, a2: a1 ** a2,
     }
 
     if op not in OPS:
@@ -26,16 +36,24 @@ def __apply_operator(op: str, arg1: Literal, arg2: Literal) -> float:
 
 def __apply_function(func: str, arg: Literal) -> float:
     FUNCS: Dict[str, Callable[[float], float]] = {
-        'sin': lambda a: math.sin(a),
-        'cos': lambda a: math.cos(a),
-        'tan': lambda a: math.tan(a),
-        'sqrt': lambda a: math.sqrt(a) if a >= 0 else math.nan,
-        'ln': lambda a: math.log(a) if a > 0 else math.nan,
-        'lg': lambda a: math.log10(a) if a > 0 else math.nan,
-        'lb': lambda a: math.log2(a) if a > 0 else math.nan,
-        'log': lambda a: math.log(a) if a > 0 else math.nan,
-        'log10': lambda a: math.log10(a) if a > 0 else math.nan,
-        'log2': lambda a: math.log2(a) if a > 0 else math.nan,
+        "sin": lambda a: math.sin(a),
+        "cos": lambda a: math.cos(a),
+        "tan": lambda a: math.tan(a),
+        "asin": lambda a: math.asin(a),
+        "acos": lambda a: math.acos(a),
+        "atan": lambda a: math.atan(a),
+        "sqrt": lambda a: math.sqrt(a) if a >= 0 else math.nan,
+        "ln": lambda a: math.log(a) if a > 0 else math.nan,
+        "lg": lambda a: math.log10(a) if a > 0 else math.nan,
+        "lb": lambda a: math.log2(a) if a > 0 else math.nan,
+        "log": lambda a: math.log(a) if a > 0 else math.nan,
+        "log10": lambda a: math.log10(a) if a > 0 else math.nan,
+        "log2": lambda a: math.log2(a) if a > 0 else math.nan,
+        "trunc": lambda a: math.trunc(a),
+        "ceil": lambda a: math.ceil(a),
+        "floor": lambda a: math.floor(a),
+        "int": lambda a: int(a),
+        "float": lambda a: float(a),
     }
 
     if func not in FUNCS:
@@ -46,11 +64,11 @@ def __apply_function(func: str, arg: Literal) -> float:
 
 def __apply_constant(const: str) -> float:
     CONSTANTS = {
-        'e': math.e,
-        'pi': math.pi,
-        'tau': math.tau,
-        'inf': math.inf,
-        'nan': math.nan
+        "e": math.e,
+        "pi": math.pi,
+        "tau": math.tau,
+        "inf": math.inf,
+        "nan": math.nan,
     }
 
     const = const.lower()
@@ -65,7 +83,10 @@ def __apply_constant(const: str) -> float:
 # Functions which are responsible for resolving runtime information
 #
 
-def __resolve_col_ref(value: ColRef, csv_row: Optional[Dict[str, float]]) -> Union[ColRef, Literal]:
+
+def __resolve_col_ref(
+    value: ColRef, csv_row: Optional[Dict[str, float]]
+) -> Union[ColRef, Literal]:
     if csv_row is None:
         return value
 
@@ -85,7 +106,13 @@ def __resolve_row_id(value: RowId, row_id: Optional[int]) -> Union[RowId, Litera
 # Recursive simplification functions
 #
 
-def __simplify_function_call(name: str, value: ValueType, row_id: Optional[int], csv_row: Optional[Dict[str, float]]) -> Union[Literal, FunctionCall]:
+
+def __simplify_function_call(
+    name: str,
+    value: ValueType,
+    row_id: Optional[int],
+    csv_row: Optional[Dict[str, float]],
+) -> Union[Literal, FunctionCall]:
     arg = __simplify_value(value, row_id, csv_row)
 
     # The results of functions with literal arguments can be precalculated
@@ -95,7 +122,9 @@ def __simplify_function_call(name: str, value: ValueType, row_id: Optional[int],
     return FunctionCall(name, arg)
 
 
-def __simplify_value(value: ValueType, row_id: Optional[int], csv_row: Optional[Dict[str, float]]) -> ValueType:
+def __simplify_value(
+    value: ValueType, row_id: Optional[int], csv_row: Optional[Dict[str, float]]
+) -> ValueType:
     # Literals cannot be simplified further
     if isinstance(value, Literal):
         return value
@@ -132,7 +161,12 @@ def __simplify_value(value: ValueType, row_id: Optional[int], csv_row: Optional[
 # Public simplification entrypoint
 #
 
-def simplify_expression(expr: Union[ValueType, Assignment], row_id: Optional[int] = None, csv_row: Optional[Dict[str, float]] = None) -> Union[ValueType, Assignment]:
+
+def simplify_expression(
+    expr: Union[ValueType, Assignment],
+    row_id: Optional[int] = None,
+    csv_row: Optional[Dict[str, float]] = None,
+) -> Union[ValueType, Assignment]:
     # Ignore the Assignment wrapper, if present
     if isinstance(expr, Assignment):
         expr.value = __simplify_value(expr.value, row_id, csv_row)
