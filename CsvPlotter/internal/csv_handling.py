@@ -89,7 +89,9 @@ class CsvData(object):
         class DataObjFunctor:
             data_obj: Optional[CsvData] = None
 
-            def __call__(self, i: int, row: List[str]) -> Optional[bool]:
+            def __call__(
+                self, i: int, sample_range: Range, row: List[str]
+            ) -> Optional[bool]:
                 if i == 0:
                     self.data_obj = cls([str(head).strip() for head in row])
                     return
@@ -109,7 +111,7 @@ class CsvData(object):
                 self.data_obj.add_row(row)
 
         functor = DataObjFunctor()
-        cls.iterate_over_lines(input_file, functor)
+        cls.iterate_over_lines(input_file, sample_range, functor)
 
         data_obj = functor.data_obj
         assert data_obj is not None
@@ -121,12 +123,15 @@ class CsvData(object):
 
     @classmethod
     def iterate_over_lines(
-        cls, input_file: str, handler: Callable[[int, List[str]], Optional[bool]]
+        cls,
+        input_file: str,
+        sample_range: Range,
+        handler: Callable[[int, Range, List[str]], Optional[bool]],
     ):
         with open(input_file, "r") as f:
             reader = csv.reader(f, delimiter=",")
             for i, row in enumerate(reader):
                 if handler is not None:
-                    exit_loop = handler(i, row)
+                    exit_loop = handler(i, sample_range, row)
                     if exit_loop:
                         break

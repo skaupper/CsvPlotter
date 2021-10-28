@@ -156,6 +156,20 @@ def create_transformation_parser() -> argparse.ArgumentParser:
         required=False,
     )
     parser.add_argument(
+        "-d",
+        "--divide",
+        type=int,
+        help="If an input data file is specified, use only every Nth data row and drop the others.",
+        default=1,
+    )
+    parser.add_argument(
+        "-r",
+        "--region",
+        type=__region_check,
+        help="If an input data file is specified, only the rows in the given range are used.",
+        default=":",
+    )
+    parser.add_argument(
         "--include-input-columns",
         action="store_true",
         help="Include all columns of the input file in the generated output.",

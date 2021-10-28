@@ -48,7 +48,8 @@ class PlotConfig(object):
     @classmethod
     def from_obj(
         cls,
-        cfg_obj: Dict[str, Any], # TODO: maybe the type can be specified more concretely?
+        # TODO: maybe the type can be specified more concretely?
+        cfg_obj: Dict[str, Any],
     ):
 
         plot_cfg = cls()
@@ -88,6 +89,7 @@ class SubplotConfig(object):
         self.title = None
         self.xlabel = "X"
         self.ylabel = "Y"
+        self.xvalues = None
         self.ylim = Range()
         self.alt_ylim = Range()
         self.alt_ylabel = None
@@ -99,6 +101,7 @@ class SubplotConfig(object):
         subplot_cfg.title = _get_or_default(cfg_obj, "title", conv=str)
         subplot_cfg.xlabel = _get_or_default(cfg_obj, "xlabel", "X", conv=str)
         subplot_cfg.ylabel = _get_or_default(cfg_obj, "ylabel", "Y", conv=str)
+        subplot_cfg.xvalues = _get_or_default(cfg_obj, "xvalues", conv=str)
         subplot_cfg.alt_ylabel = _get_or_default(cfg_obj, "alt_ylabel", conv=str)
 
         _assign_range(

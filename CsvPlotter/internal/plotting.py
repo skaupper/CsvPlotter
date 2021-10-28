@@ -39,7 +39,10 @@ def __plot_subplot(
     line_objects: List[Line2D] = []
     labels: List[str] = []
 
-    x = __get_index_list(config.range, data_obj.size)
+    if subplot.xvalues is None:
+        x = __get_index_list(config.range, data_obj.size)
+    else:
+        x = data_obj.data[subplot.xvalues][: data_obj.size]
     alt_axis: Optional[Axes] = None
     curr_axis: Axes
 

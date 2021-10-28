@@ -3,6 +3,7 @@ import yaml
 
 from .internal import argument_parser, csv_handling, plotting
 from .internal import configuration as cfg
+from .internal.utils import Range
 from .internal.utilities.list_headers import list_headers
 from .internal.utilities.calc_metrics import calc_metrics
 from .internal.utilities.transform_file import transform_file
@@ -120,6 +121,7 @@ def __handle_transform_args(args: Namespace):
         args.col_expr,
         args.row_count,
         args.include_input_columns,
+        Range(args.region[0], args.region[1], args.divide),
     )
 
 

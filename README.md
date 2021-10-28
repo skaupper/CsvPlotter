@@ -100,6 +100,8 @@ plots:
   - title: Original angle       # Title of the subplot. Optional (Default: ~)
     ylabel: Amplitude           # Label for the Y axis. Optional (Default: 'Y')
     xlabel: Sample              # Label for the X axis. Optional (Default: 'X')
+    xvalues: sample_nr          # Name of column to be
+                                # used as the X axis.   Optional (Default: ~)
     columns:                    # A list of columns.    Required (at least 1)
       - name: angle             # Name of the column.   Required.
         label: Angle [rad]      # Label for the column. Optional (Default: `name`)

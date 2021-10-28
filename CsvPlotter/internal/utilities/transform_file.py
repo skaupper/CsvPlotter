@@ -9,6 +9,7 @@ from .col_expr_parser import (
 )
 from .col_expr_simplifier import simplify_expression
 from .. import csv_handling
+from ..utils import Range
 
 
 class TransformedColumn(TypedDict):
@@ -27,6 +28,7 @@ def transform_file(
     expressions: List[str],
     row_count: Optional[int],
     include_input_columns: bool,
+    sample_range: Range,
 ):
     # Preprocess the given expressions
     processed_expressions: List[Assignment] = []
@@ -45,7 +47,9 @@ def transform_file(
     with open(output_file, "w") as f:
         input_headers: List[str] = []
 
-        def iteration_handler(i: int, row: List[str]) -> Optional[bool]:
+        def iteration_handler(
+            i: int, sample_range: Range, row: List[str]
+        ) -> Optional[bool]:
             nonlocal input_headers
             nonlocal transformed_columns
 
@@ -55,11 +59,15 @@ def transform_file(
                 generated_headers = [c["name"] for c in transformed_columns]
 
                 if include_input_columns:
-                    f.write(", ".join(input_headers) + ", ")
+                    f.write(", ".join(input_headers))
+                    if len(generated_headers) > 0:
+                        f.write(", ")
                 f.write(", ".join(generated_headers) + "\n")
                 return
 
             data_index = i - 1
+            if data_index not in sample_range:
+                return
 
             # Prepare column data for the transformation expression to use their data
             col_data: Dict[str, float] = {}
@@ -82,15 +90,19 @@ def transform_file(
             input_row_data = row
             generated_row_data = [str(lit.value) for lit in resolved_expressions]
             if include_input_columns:
-                f.write(", ".join([d.strip() for d in input_row_data]) + ", ")
+                f.write(", ".join([d.strip() for d in input_row_data]))
+                if len(generated_row_data) > 0:
+                    f.write(", ")
             f.write(", ".join([d.strip() for d in generated_row_data]) + "\n")
 
         # Call the iteration handler using the given CSV file or the given row count
         if input_file is not None:
-            csv_handling.CsvData.iterate_over_lines(input_file, iteration_handler)
+            csv_handling.CsvData.iterate_over_lines(
+                input_file, sample_range, iteration_handler
+            )
         elif row_count is not None:
             for i in range(row_count + 1):
-                iteration_handler(i, [])
+                iteration_handler(i, Range(), [])
 
 
 if __name__ == "__main__":
