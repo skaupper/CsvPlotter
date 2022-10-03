@@ -18,7 +18,7 @@ class CsvData(object):
     capacity: int
     size: int
     headers: List[str]
-    data: Dict[str, "np.ndarray[np.float32]"]
+    data: Dict[str, "np.ndarray[Optional[np.float32]]"]
 
     def __init__(self, headers: List[str]):
         self.capacity = 0
@@ -48,25 +48,26 @@ class CsvData(object):
             val = None
 
             # Try parsing the given entry
-            KNOWN_VALUE_PARSERS: list[Callable[[str], Union[int, float]]] = [
-                dir2int,
-                lambda s: 1 if str2bool(s) else 0,
-            ]
+            if len(val_str) > 0:
+                KNOWN_VALUE_PARSERS: list[Callable[[str], Union[int, float]]] = [
+                    dir2int,
+                    lambda s: 1 if str2bool(s) else 0,
+                ]
 
-            for parser in KNOWN_VALUE_PARSERS:
+                for parser in KNOWN_VALUE_PARSERS:
+                    try:
+                        val = parser(val_str)
+                    except ValueError:
+                        pass
                 try:
-                    val = parser(val_str)
+                    val = float(val_str)
+                    val = int(val_str)
                 except ValueError:
                     pass
-            try:
-                val = float(val_str)
-                val = int(val_str)
-            except ValueError:
-                pass
 
-            if val is None:
-                print(f'Unsupported value type of "{val_str}" {self.size}!')
-                return
+                if val is None:
+                    print(f'Unsupported value type of "{val_str}" {self.size}!')
+                    return
 
             self.data[h][self.size] = val
 
